@@ -40,7 +40,7 @@ public class Routers {
      * Returns a list of routers and their bounds.
      */
     @GET
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    @Produces({ MediaType.APPLICATION_JSON })
     public RouterList getRouterIds()
             throws JSONException {
         RouterList routerList = new RouterList();

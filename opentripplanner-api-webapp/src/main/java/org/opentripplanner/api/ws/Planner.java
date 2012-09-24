@@ -88,7 +88,7 @@ public class Planner extends RoutingResource {
     }
 
     @GET
-    @Produces( { MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    @Produces( { MediaType.APPLICATION_JSON })
     public Response getItineraries() throws JSONException {
         return wrapGenerate(new OneArgFunc<TripPlan, RoutingRequest>() {
             public TripPlan call(RoutingRequest request) {
@@ -98,7 +98,7 @@ public class Planner extends RoutingResource {
 
     @GET
     @Path("/first")
-    @Produces( { MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    @Produces( { MediaType.APPLICATION_JSON })
     public Response getFirstTrip() throws JSONException {
 
         return wrapGenerate(new OneArgFunc<TripPlan, RoutingRequest>() {
@@ -109,7 +109,7 @@ public class Planner extends RoutingResource {
 
     @GET
     @Path("/last")
-    @Produces( { MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    @Produces( { MediaType.APPLICATION_JSON })
     public Response getLastTrip() throws JSONException {
 
         return wrapGenerate(new OneArgFunc<TripPlan, RoutingRequest>() {
