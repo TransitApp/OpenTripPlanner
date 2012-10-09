@@ -14,17 +14,20 @@
 package org.opentripplanner.routing.edgetype;
 
 import org.onebusaway.gtfs.model.Stop;
-import org.opentripplanner.routing.core.EdgeNarrative;
+
+import com.vividsolutions.jts.geom.LineString;
 
 /**
- * Hops and PatternHops have start/stop Stops
+ * FrequencyHops and PatternHops have start/stop Stops
  * @author novalis
  *
  */
-public interface HopEdge extends EdgeNarrative {
+public interface HopEdge {
 
-	Stop getEndStop();
+    Stop getEndStop();
 
-	Stop getStartStop();
+    Stop getStartStop();
+
+    void setGeometry(LineString geometry);
 
 }

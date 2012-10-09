@@ -21,6 +21,7 @@ import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
+import org.opentripplanner.routing.vertextype.IntersectionVertex;
 
 /**
  * A euclidian remaining weight strategy that takes into account transit 
@@ -40,6 +41,10 @@ public class DefaultRemainingWeightHeuristic implements RemainingWeightHeuristic
     private DistanceLibrary distanceLibrary = SphericalDistanceLibrary.getInstance();
     private TransitLocalStreetService localStreetService;
 
+    private double targetX;
+
+    private double targetY;
+
     @Override
     public double computeInitialWeight(State s, Vertex target) {
         this.options = s.getOptions();
@@ -49,7 +54,10 @@ public class DefaultRemainingWeightHeuristic implements RemainingWeightHeuristic
         Graph graph = options.rctx.graph;
         localStreetService = graph.getService(TransitLocalStreetService.class);
 
-        return distanceLibrary.fastDistance(s.getVertex().getCoordinate(), target.getCoordinate())
+        targetX = target.getX();
+        targetY = target.getY();
+
+        return distanceLibrary.fastDistance(s.getVertex().getY(), s.getVertex().getX(), targetY, targetX)
                 / maxSpeed;
     }
 
@@ -57,8 +65,9 @@ public class DefaultRemainingWeightHeuristic implements RemainingWeightHeuristic
     public double computeForwardWeight(State s, Vertex target) {
 
     	Vertex sv = s.getVertex();
-        double euclidianDistance = distanceLibrary.fastDistance(sv.getCoordinate(), 
-                target.getCoordinate());
+        double euclidianDistance = distanceLibrary.fastDistance(sv.getY(), sv.getX(),
+                targetY, targetX);
+
         /*	On a non-transit trip, the remaining weight is simply distance / speed
          *	On a transit trip, there are two cases:
          *	(1) we're not on a transit vehicle.  In this case, there are two possible ways to 
@@ -87,9 +96,9 @@ public class DefaultRemainingWeightHeuristic implements RemainingWeightHeuristic
                 if (s.isEverBoarded()) {
                     boardCost += options.transferPenalty;
                     if (localStreetService != null) {
-                        if (s.getOptions().getMaxWalkDistance() - s.getWalkDistance() < distanceLibrary
-                                .fastDistance(sv.getCoordinate(), target.getCoordinate())
-                                && !localStreetService.transferrable(sv)) {
+                        if (options.getMaxWalkDistance() - s.getWalkDistance() < euclidianDistance
+                            && sv instanceof IntersectionVertex
+                            && !localStreetService.transferrable(sv)) {
                             return Double.POSITIVE_INFINITY;
                         }
                     }
@@ -114,7 +123,6 @@ public class DefaultRemainingWeightHeuristic implements RemainingWeightHeuristic
             }
         }
         else {
-            // This was missing from the original AStar, but it only makes sense
             return options.walkReluctance * euclidianDistance / maxSpeed;
         }
     }

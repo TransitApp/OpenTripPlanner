@@ -17,45 +17,41 @@ import static org.opentripplanner.common.IterableLibrary.filter;
 
 import java.io.File;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
 import java.util.TimeZone;
 
 import junit.framework.TestCase;
 
 import org.onebusaway.gtfs.model.calendar.CalendarServiceData;
-import org.onebusaway.gtfs.model.StopTime;
 import org.opentripplanner.ConstantsForTests;
 import org.opentripplanner.common.geometry.GeometryUtils;
+import org.opentripplanner.gbannotation.GraphBuilderAnnotation;
+import org.opentripplanner.gbannotation.NegativeHopTime;
 import org.opentripplanner.gtfs.GtfsContext;
 import org.opentripplanner.gtfs.GtfsLibrary;
 import org.opentripplanner.routing.algorithm.GenericAStar;
-import org.opentripplanner.routing.core.GraphBuilderAnnotation;
 import org.opentripplanner.routing.core.OptimizeType;
+import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.TransferTable;
 import org.opentripplanner.routing.core.TraverseModeSet;
-import org.opentripplanner.routing.core.RoutingRequest;
-import org.opentripplanner.routing.core.GraphBuilderAnnotation.Variety;
-import org.opentripplanner.routing.edgetype.Alight;
 import org.opentripplanner.routing.edgetype.FrequencyBasedTripPattern;
 import org.opentripplanner.routing.edgetype.FrequencyBoard;
-import org.opentripplanner.routing.edgetype.PatternAlight;
-import org.opentripplanner.routing.edgetype.PatternBoard;
 import org.opentripplanner.routing.edgetype.PatternDwell;
 import org.opentripplanner.routing.edgetype.PatternHop;
+import org.opentripplanner.routing.edgetype.PlainStreetEdge;
 import org.opentripplanner.routing.edgetype.SimpleEdge;
 import org.opentripplanner.routing.edgetype.StreetTransitLink;
-import org.opentripplanner.routing.edgetype.TurnEdge;
+import org.opentripplanner.routing.edgetype.StreetTraversalPermission;
+import org.opentripplanner.routing.edgetype.TransitBoardAlight;
 import org.opentripplanner.routing.edgetype.factory.GTFSPatternHopFactory;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.spt.GraphPath;
 import org.opentripplanner.routing.spt.ShortestPathTree;
+import org.opentripplanner.routing.vertextype.IntersectionVertex;
 import org.opentripplanner.routing.vertextype.TransitStop;
-import org.opentripplanner.routing.vertextype.TurnVertex;
 import org.opentripplanner.util.TestUtils;
 
 import com.vividsolutions.jts.geom.Geometry;
@@ -79,11 +75,11 @@ public class TestPatternHopFactory extends TestCase {
         for (int i = 0; i < stops.length; ++i) {
             TransitStop stop = (TransitStop) (graph.getVertex(stops[i]));
             
-            TurnVertex front = new TurnVertex(graph, "near_" + stop.getStopId(), GeometryUtils.makeLineString(stop.getX() + 0.0001, stop.getY() + 0.0001, stop.getX() - 0.0001, stop.getY() - 0.0001), "near " + stop.getStopId(), 100, false, null);
-            TurnVertex back =  new TurnVertex(graph, "near_" + stop.getStopId(), GeometryUtils.makeLineString(stop.getX() - 0.0001, stop.getY() - 0.0001, stop.getX() + 0.0001, stop.getY() + 0.0001), "near " + stop.getStopId(), 100, true, null);
+            IntersectionVertex front = new IntersectionVertex(graph, "near_1_" + stop.getStopId(), stop.getX() + 0.0001, stop.getY() + 0.0001);
+            IntersectionVertex back =  new IntersectionVertex(graph, "near_2_" + stop.getStopId(), stop.getX() - 0.0001, stop.getY() - 0.0001);
             
-            TurnEdge street1 = new TurnEdge(front, back);
-            TurnEdge street2 = new TurnEdge(back, front);
+            PlainStreetEdge street1 = new PlainStreetEdge(front, back, GeometryUtils.makeLineString(stop.getX() + 0.0001, stop.getY() + 0.0001, stop.getX() - 0.0001, stop.getY() - 0.0001), "street", 100, StreetTraversalPermission.ALL, false);
+            PlainStreetEdge street2 = new PlainStreetEdge(back, front, GeometryUtils.makeLineString(stop.getX() - 0.0001, stop.getY() - 0.0001, stop.getX() + 0.0001, stop.getY() + 0.0001), "street", 100, StreetTraversalPermission.ALL, true);
         }
 
         NetworkLinker nl = new NetworkLinker(graph);
@@ -93,13 +89,9 @@ public class TestPatternHopFactory extends TestCase {
     public void testAnnotation() {
         boolean found = false;
         for (GraphBuilderAnnotation annotation : graph.getBuilderAnnotations()) {
-            if (annotation.getVariety().equals(Variety.NEGATIVE_HOP_TIME)) {
-                Collection<Object> objects = annotation.getReferencedObjects();
-                assertTrue(objects.size() == 2);
-                Iterator<Object> iter = objects.iterator();
-                StopTime st0 = (StopTime) iter.next();
-                StopTime st1 = (StopTime) iter.next();
-                assertTrue(st0.getDepartureTime() > st1.getArrivalTime());
+            if (annotation instanceof NegativeHopTime) {
+                NegativeHopTime nht = (NegativeHopTime) annotation;
+                assertTrue(nht.st0.getDepartureTime() > nht.st1.getArrivalTime());
                 found = true;
             }
         }
@@ -114,17 +106,18 @@ public class TestPatternHopFactory extends TestCase {
         assertEquals(3, stop_b_depart.getDegreeOut());
 
         for (Edge e : stop_a_depart.getOutgoing()) {
-            assertTrue(e instanceof PatternBoard);
+            assertEquals(TransitBoardAlight.class, e.getClass());
+            assertTrue(((TransitBoardAlight) e).isBoarding());
         }
         
-        PatternBoard pb = (PatternBoard) stop_a_depart.getOutgoing().iterator().next();
+        TransitBoardAlight pb = (TransitBoardAlight) stop_a_depart.getOutgoing().iterator().next();
         Vertex journey_a_1 = pb.getToVertex();
 
         assertEquals(1, journey_a_1.getDegreeIn());
 
         for (Edge e : journey_a_1.getOutgoing()) {
             if (e.getToVertex() instanceof TransitStop) {
-                assertEquals(Alight.class, e.getClass());
+                assertEquals(TransitBoardAlight.class, e.getClass());
             } else {
                 assertEquals(PatternHop.class, e.getClass());
             }
@@ -236,7 +229,10 @@ public class TestPatternHopFactory extends TestCase {
     }
 
     public PatternHop getHopOut(Vertex v) {
-        for (PatternBoard e : filter(v.getOutgoing(), PatternBoard.class)) {
+        for (TransitBoardAlight e : filter(v.getOutgoing(), TransitBoardAlight.class)) {
+            if (!e.isBoarding())
+                continue;
+            
             for (PatternHop f : filter(e.getToVertex().getOutgoing(), PatternHop.class)) {
                 return f;
             }
@@ -336,7 +332,8 @@ public class TestPatternHopFactory extends TestCase {
         GraphPath path = spt.getPath(stop_k, false);
         int num_alights = 0;
         for (State s : path.states) {
-            if (s.getBackEdge() instanceof PatternAlight || s.getBackEdge() instanceof Alight) {
+            if (s.getBackEdge() instanceof TransitBoardAlight
+                && !((TransitBoardAlight) s.getBackEdge()).isBoarding()) {
                 num_alights += 1;
             }
             if (s.getBackEdge() instanceof PatternDwell) {
@@ -352,7 +349,8 @@ public class TestPatternHopFactory extends TestCase {
 //        path.reverse();
         num_alights = 0;
         for (State s : path.states) {
-            if (s.getBackEdge()instanceof PatternAlight || s.getBackEdge() instanceof Alight) {
+            if (s.getBackEdge() instanceof TransitBoardAlight
+                && !((TransitBoardAlight) s.getBackEdge()).isBoarding()) {
                 num_alights += 1;
             }
             if (s.getBackEdge() instanceof PatternDwell) {
@@ -434,9 +432,9 @@ public class TestPatternHopFactory extends TestCase {
     }
 
     public void testWheelchairAccessible() throws Exception {
-        Vertex near_a = graph.getVertex("near_agency_A");
-        Vertex near_b = graph.getVertex("near_agency_B");
-        Vertex near_c = graph.getVertex("near_agency_C");
+        Vertex near_a = graph.getVertex("near_1_agency_A");
+        Vertex near_b = graph.getVertex("near_1_agency_B");
+        Vertex near_c = graph.getVertex("near_1_agency_C");
 
         Vertex stop_d = graph.getVertex("agency_D");
         Vertex split_d = null;

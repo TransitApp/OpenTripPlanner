@@ -30,24 +30,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
-import org.opentripplanner.common.IterableLibrary;
-import org.opentripplanner.routing.core.EdgeNarrative;
+import org.opentripplanner.gbannotation.GraphBuilderAnnotation;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.TraverseMode;
-import org.opentripplanner.routing.location.StreetLocation;
 import org.opentripplanner.routing.spt.GraphPath;
 import org.opentripplanner.routing.vertextype.TransitStop;
-import org.opentripplanner.routing.vertextype.TurnVertex;
-import org.opentripplanner.routing.edgetype.DelegatingEdgeNarrative;
 import org.opentripplanner.routing.graph.Edge;
-import org.opentripplanner.routing.edgetype.PatternAlight;
-import org.opentripplanner.routing.edgetype.PatternBoard;
+import org.opentripplanner.routing.edgetype.TransitBoardAlight;
 import org.opentripplanner.routing.edgetype.StreetTransitLink;
 import org.opentripplanner.routing.edgetype.StreetTraversalPermission;
 import org.opentripplanner.routing.edgetype.StreetEdge;
 import org.opentripplanner.routing.edgetype.PatternEdge;
-import org.opentripplanner.routing.edgetype.TurnEdge;
-import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 
@@ -288,14 +281,11 @@ public class ShowGraph extends PApplet implements MouseWheelListener {
         visibleStreetEdges.clear();
         visibleTransitEdges.clear();
         for (Edge de : (Iterable<Edge>) edgeIndex.query(modelBounds)) {
-        	if (de instanceof PatternEdge ||
-        		de instanceof StreetTransitLink) {
-        		visibleTransitEdges.add(de);
-        	} else if (de instanceof TurnEdge) {
-        		visibleStreetEdges.add(de);
-        	} else if (de instanceof StreetEdge) {
-        		visibleStreetEdges.add(de);
-        	}
+            if (de instanceof PatternEdge || de instanceof StreetTransitLink) {
+                visibleTransitEdges.add(de);
+            } else if (de instanceof StreetEdge) {
+                visibleStreetEdges.add(de);
+            }
         }
     }
     
@@ -321,20 +311,16 @@ public class ShowGraph extends PApplet implements MouseWheelListener {
     private void drawGraphPath(GraphPath gp) {
         // draw edges in different colors according to mode
     	for (State s : gp.states) {
-        	EdgeNarrative en = s.getBackEdgeNarrative();
-            if(en == null) continue;
+        	TraverseMode mode = s.getBackMode();
 
-        	TraverseMode mode = en.getMode();
-            if(en instanceof DelegatingEdgeNarrative) {
-                en = ((DelegatingEdgeNarrative)en).getBase();
-            }
-
-        	if (!(en instanceof Edge)) continue;
-        	Edge e = (Edge) en;
+        	Edge e = s.getBackEdge();
+        	if (e == null)
+        	    continue;
+        	
         	if (mode.isTransit()) {
-            	stroke(200, 050, 000); 
-            	strokeWeight(6);   
-            	drawEdge(e);
+            	    stroke(200, 050, 000); 
+            	    strokeWeight(6);   
+            	    drawEdge(e);
         	}
         	if (e instanceof StreetEdge) {
         		StreetTraversalPermission stp = ((StreetEdge)e).getPermission();
@@ -364,14 +350,16 @@ public class ShowGraph extends PApplet implements MouseWheelListener {
         // mark key vertices
         lastLabelY = -999;
     	labelState(gp.states.getFirst(), "begin");
-        for (State s : gp.states) {
-        	Edge e = s.getBackEdge();
-        	if (e instanceof PatternBoard) {
-        		labelState(s, "board");
-        	} else if (e instanceof PatternAlight) {
-        		labelState(s, "alight");
-        	}
-        }
+    	for (State s : gp.states) {
+    	    Edge e = s.getBackEdge();
+    	    if (e instanceof TransitBoardAlight) {
+    	        if (((TransitBoardAlight) e).isBoarding()) {
+    	            labelState(s, "board");
+    	        } else {
+    	            labelState(s, "alight");
+    	        }
+    	    }
+    	}
     	labelState(gp.states.getLast(), "end");
 
         if (VIDEO) {
@@ -403,16 +391,6 @@ public class ShowGraph extends PApplet implements MouseWheelListener {
     private void drawVertex(Vertex v, double r) {
         noStroke();
         ellipse(toScreenX(v.getX()), toScreenY(v.getY()), r, r);
-        if (v instanceof TurnVertex) {
-            Coordinate[] coords = ((TurnVertex) v).getGeometry().getCoordinates();
-            Coordinate c0 = coords[0];
-            Coordinate c1 = coords[coords.length - 1];
-            stroke(255, 255, 50, 127);
-            strokeWeight(3);
-            line((float) toScreenX(c0.x), (float) toScreenY(c0.y), 
-                 (float) toScreenX(c1.x), (float) toScreenY(c1.y));
-            noStroke();
-        }
     }
 
     public synchronized void draw() {
@@ -729,4 +707,39 @@ public class ShowGraph extends PApplet implements MouseWheelListener {
         highlightedEdges = edges;
         drawLevel = DRAW_ALL;
     }
+
+    public void drawAnotation(GraphBuilderAnnotation anno) {
+        Envelope env = new Envelope();
+
+        Edge e = anno.getReferencedEdge();
+        if (e != null) {
+            this.enqueueHighlightedEdge(e);
+            env.expandToInclude(e.getFromVertex().getCoordinate());
+            env.expandToInclude(e.getToVertex().getCoordinate());
+        }
+        
+        ArrayList<Vertex> vertices = new ArrayList<Vertex>();
+        Vertex v = anno.getReferencedVertex();
+        if (v != null) {
+            env.expandToInclude(v.getCoordinate());
+            vertices.add(v);
+        }
+        
+        if (e == null && v == null) 
+            return;
+
+        // make it a little bigger, especially needed for STOP_UNLINKED
+        env.expandBy(0.02);
+
+        // highlight relevant things
+        this.clearHighlights();
+        this.setHighlightedVertices(vertices);
+
+        // zoom the graph display
+        this.zoomToEnvelope(env);
+        
+        // and draw
+        this.draw();
+    }
+
 }

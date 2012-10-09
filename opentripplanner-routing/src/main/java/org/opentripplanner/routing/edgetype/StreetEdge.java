@@ -12,8 +12,12 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 
 package org.opentripplanner.routing.edgetype;
+import java.util.List;
+import java.util.Set;
+
+import org.opentripplanner.common.TurnRestriction;
 import org.opentripplanner.routing.core.RoutingRequest;
-import org.opentripplanner.routing.graph.AbstractEdge;
+import org.opentripplanner.routing.patch.Alert;
 import org.opentripplanner.routing.vertextype.StreetVertex;
 
 /**
@@ -23,12 +27,15 @@ import org.opentripplanner.routing.vertextype.StreetVertex;
  */
 
 /* package-private ? */ 
-public abstract class StreetEdge extends AbstractEdge implements EdgeWithElevation {
+// EdgeWithElevation extends Edge
+public abstract class StreetEdge extends EdgeWithElevation {
     
     private static final long serialVersionUID = 1L;
     public static final int CLASS_STREET = 3;
     public static final int CLASS_CROSSING = 4;
     public static final int CLASS_OTHERPATH = 5;
+    public static final int CLASS_PLATFORM = 8;
+    public static final int CROSSING_CLASS_MASK = 7; //ignore platform
 
     public StreetEdge(StreetVertex v1, StreetVertex v2) {
         super(v1, v2);
@@ -43,5 +50,13 @@ public abstract class StreetEdge extends AbstractEdge implements EdgeWithElevati
     public abstract boolean isNoThruTraffic();
     
     public abstract int getStreetClass();
+
+    public abstract boolean isWheelchairAccessible();
+    
+    public abstract Set<Alert> getNotes ();
+    
+    public abstract Set<Alert> getWheelchairNotes ();
+
+    public abstract List<TurnRestriction> getTurnRestrictions();
     
 }

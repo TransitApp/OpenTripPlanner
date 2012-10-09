@@ -22,6 +22,7 @@ import java.util.Queue;
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.pathparser.BasicPathParser;
+import org.opentripplanner.routing.pathparser.NoThruTrafficPathParser;
 import org.opentripplanner.routing.pathparser.PathParser;
 import org.opentripplanner.routing.services.GraphService;
 import org.opentripplanner.routing.services.PathService;
@@ -41,8 +42,10 @@ public class RetryingPathServiceImpl implements PathService {
 
     private static final double MAX_WALK_MULTIPLE = 16;
 
-    @Autowired public GraphService graphService;
-    @Autowired public SPTService sptService;
+    @Autowired
+    private GraphService graphService;
+    @Autowired
+    private SPTService sptService;
 
     private double firstPathTimeout = 0; // seconds
     private double multiPathTimeout = 0; // seconds
@@ -82,8 +85,8 @@ public class RetryingPathServiceImpl implements PathService {
         // orphan RoutingContexts leaving temporary edges in the graph until GC)
         if (options.rctx == null) {
             options.setRoutingContext(graphService.getGraph(options.getRouterId()));
-            options.rctx.pathParsers = new PathParser[1];
-            options.rctx.pathParsers[0] = new BasicPathParser();
+            options.rctx.pathParsers = new PathParser[] { new BasicPathParser(),
+                    new NoThruTrafficPathParser() };
         }
 
         long searchBeginTime = System.currentTimeMillis();
@@ -183,6 +186,22 @@ public class RetryingPathServiceImpl implements PathService {
         // We order the list of returned paths by the time of arrival or departure (not path duration)
         Collections.sort(paths, new PathComparator(options.isArriveBy()));
         return paths;
+    }
+
+    public GraphService getGraphService() {
+        return graphService;
+    }
+
+    public void setGraphService(GraphService graphService) {
+        this.graphService = graphService;
+    }
+
+    public SPTService getSptService() {
+        return sptService;
+    }
+
+    public void setSptService(SPTService sptService) {
+        this.sptService = sptService;
     }
 
 }

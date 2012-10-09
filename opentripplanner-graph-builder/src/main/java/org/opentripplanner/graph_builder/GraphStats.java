@@ -6,11 +6,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
@@ -21,8 +18,8 @@ import org.opentripplanner.routing.edgetype.PatternHop;
 import org.opentripplanner.routing.edgetype.TableTripPattern;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
+import org.opentripplanner.routing.vertextype.StreetVertex;
 import org.opentripplanner.routing.vertextype.TransitStop;
-import org.opentripplanner.routing.vertextype.TurnVertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,7 +147,7 @@ public class GraphStats {
                     n, radius, useStops ? "stops" : "streets"));
             List<Vertex> vertices = new ArrayList<Vertex>();
             GeodeticCalculator gc = new GeodeticCalculator();
-            Class<?> klasse = useStops ? TransitStop.class : TurnVertex.class;
+            Class<?> klasse = useStops ? TransitStop.class : StreetVertex.class;
             for (Vertex v : graph.getVertices())
                 if (klasse.isInstance(v))
                     vertices.add(v);
@@ -164,8 +161,8 @@ public class GraphStats {
                 int i = 0;
                 for (Vertex v : vertices) {
                     Coordinate c;
-                    if (v instanceof TurnVertex) {
-                        LineString ls = ((TurnVertex)v).geometry;
+                    if (v instanceof StreetVertex) {
+                        LineString ls = ((StreetVertex)v).getOutgoing().iterator().next().getGeometry();
                         int numPoints = ls.getNumPoints();
                         LocationIndexedLine lil = new LocationIndexedLine(ls);
                         int seg = random.nextInt(numPoints);
