@@ -106,6 +106,9 @@ public abstract class RoutingResource {
 
     /** The list of banned routes.  The format is agency_route, so TriMet_100. */
     @DefaultValue("") @QueryParam("bannedRoutes") protected List<String> bannedRoutes;
+    
+    /** The comma-separated list of banned agencies. */
+    @DefaultValue("") @QueryParam("bannedAgencies") protected List<String> bannedAgencies;
 
     /** An additional penalty added to boardings after the first.  The value is in OTP's
      *  internal weight units, which are roughly equivalent to seconds.  Set this to a high
@@ -253,6 +256,8 @@ public abstract class RoutingResource {
         request.setPreferredRoutes(get(preferredRoutes, n, request.getPreferredRouteStr()));
         request.setUnpreferredRoutes(get(unpreferredRoutes, n, request.getUnpreferredRouteStr()));
         request.setBannedRoutes(get(bannedRoutes, n, request.getBannedRouteStr()));
+        request.setBannedAgencies(get(bannedAgencies, n, request.getBannedAgenciesStr()));
+
         // replace deprecated optimization preference
         // opt has already been assigned above
         if (opt == OptimizeType.TRANSFERS) {
@@ -302,7 +307,6 @@ public abstract class RoutingResource {
 
         return request;
     }
-    
 /**
  * @param l list of query parameter values
  * @param n requested item index 

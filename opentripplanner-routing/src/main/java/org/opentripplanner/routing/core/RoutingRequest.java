@@ -15,6 +15,7 @@ package org.opentripplanner.routing.core;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -165,6 +166,9 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     /** Do not use certain named routes */
     public HashSet<RouteSpec> bannedRoutes = new HashSet<RouteSpec>();
+    
+    /** Do not use certain named agencies */
+    public HashSet<String> bannedAgencies = new HashSet<String>();
     
     /** Do not use certain trips */
     public HashSet<AgencyAndId> bannedTrips = new HashSet<AgencyAndId>();
@@ -405,6 +409,11 @@ public class RoutingRequest implements Cloneable, Serializable {
     public void setBannedRoutes(String s) {
         if (s != null && !s.equals(""))
             bannedRoutes = new HashSet<RouteSpec>(RouteSpec.listFromString(s));
+    }
+    
+    public void setBannedAgencies(String s) {
+        if (s != null && !s.equals(""))
+            bannedAgencies = new HashSet<String>(Arrays.asList(s.split(",")));
     }
     
     public final static int MIN_SIMILARITY = 1000;
@@ -801,6 +810,19 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     public String getBannedRouteStr() {
         return getRouteSetStr(bannedRoutes);
+    }
+    
+    public String getBannedAgenciesStr() {
+    	StringBuilder builder = new StringBuilder();
+        for (String agency : bannedAgencies) {
+            builder.append(agency);
+            builder.append(",");
+        }
+        if (builder.length() > 0) {
+            // trim trailing comma
+            builder.setLength(builder.length() - 1);
+        }
+        return builder.toString();
     }
 
     public void setMaxWalkDistance(double maxWalkDistance) {
