@@ -13,10 +13,7 @@
 
 package org.opentripplanner.routing.edgetype;
 
-import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Trip;
-import org.opentripplanner.gtfs.GtfsLibrary;
-import org.opentripplanner.routing.core.RouteSpec;
 import org.opentripplanner.routing.core.RoutingContext;
 import org.opentripplanner.routing.core.ServiceDay;
 import org.opentripplanner.routing.core.State;
@@ -263,7 +260,6 @@ public class TransitBoardAlight extends PatternEdge implements OnBoardForwardEdg
             /* check if agency is banned for this plan */
             if (options.tripIsBanned(trip))
             	return null;
-
 
             /* check if route is preferred for this plan */
             long preferences_penalty = options.preferencesPenaltyForTrip(trip);
