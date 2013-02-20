@@ -20,29 +20,14 @@
 		<property name="numItineraries" value="4"/>
 		<property name="maxTransfers" value="4"/>
 		<property name="walkSpeed" value="1.475232"/>
-		<property name="minTransferTime" value="120"/>
+		<property name="transferSlack" value="120"/>
+		<property name="showIntermediateStops" value="true"/>
 	</bean>
 
 	<bean id="pathService" class="org.opentripplanner.routing.impl.RetryingPathServiceImpl">
         <property name="firstPathTimeout" value="10.0" />
         <property name="multiPathTimeout" value="1.0" />
 	</bean>
- 
-	<!-- Replacement pathService for testing multi-objective search -->
-	<!--
-	<bean id="pathService" class="org.opentripplanner.routing.impl.MultiObjectivePathServiceImpl">
-        <property name="timeouts">
-        	<list>
-    	    	<value> 2.0 </value>
-    	    	<value> 1.0 </value>
-    	    	<value> 0.5 </value>
-    	    	<value> 0.4 </value>
-    	    	<value> 0.3 </value>
-	        </list>
-       	</property>
-        <property name="maxPaths" value="4" />
-	</bean>
-	-->
  
   <bean id="heuristicFactory" class="org.opentripplanner.routing.impl.DefaultRemainingWeightHeuristicFactoryImpl"/>
   <bean id="sptService" class="org.opentripplanner.routing.algorithm.GenericAStar"/>
