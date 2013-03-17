@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.opentripplanner.common.model.P2;
 import org.opentripplanner.openstreetmap.model.OSMWithTags;
@@ -37,9 +39,21 @@ public class WayPropertySet {
     private List<CreativeNamerPicker> creativeNamers;
 
     private List<SlopeOverridePicker> slopeOverrides;
+    
+    /**
+     * SpeedPickers for automobile speeds.
+     */
+    private List<SpeedPicker> speedPickers;
+    
+    /**
+     * The speed for street segments that match no speedPicker.    
+     */
+    private Float defaultSpeed;
 
     private List<NotePicker> notes;
-
+    
+    private Pattern maxSpeedPattern;
+    
     public WayProperties defaultProperties;
 
     private WayPropertySetSource base;
@@ -49,10 +63,15 @@ public class WayPropertySet {
         defaultProperties = new WayProperties();
         defaultProperties.setSafetyFeatures(new P2<Double>(1.0, 1.0));
         defaultProperties.setPermission(StreetTraversalPermission.ALL);
+        defaultSpeed = 11.2f; // 11.2 m/s, ~25 mph, standard speed limit in the US 
         wayProperties = new ArrayList<WayPropertyPicker>();
         creativeNamers = new ArrayList<CreativeNamerPicker>();
         slopeOverrides = new ArrayList<SlopeOverridePicker>();
+        speedPickers = new ArrayList<SpeedPicker>();
         notes = new ArrayList<NotePicker>();
+        // regex courtesy http://wiki.openstreetmap.org/wiki/Key:maxspeed
+        // and edited
+        maxSpeedPattern = Pattern.compile("^([0-9][\\.0-9]+?)(?:[ ]?(kmh|km/h|kmph|kph|mph|knots))?$");
     }
 
     public void setBase(WayPropertySetSource base) {
@@ -165,6 +184,69 @@ public class WayPropertySet {
         }
         return bestNamer.generateCreativeName(way);
     }
+    
+    /**
+     * Calculate the automobile speed, in meters per second, for this way.
+     */
+    public float getCarSpeedForWay(OSMWithTags way, boolean back) {
+        // first, check for maxspeed tags
+        Float speed = null;
+        Float currentSpeed;
+        
+        if (way.hasTag("maxspeed:motorcar"))
+            speed = getMetersSecondFromSpeed(way.getTag("maxspeed:motorcar"));
+        
+        if (speed == null && !back && way.hasTag("maxspeed:forward"))
+            speed = getMetersSecondFromSpeed(way.getTag("maxspeed:forward"));
+        
+        if (speed == null && back && way.hasTag("maxspeed:reverse"))
+            speed = getMetersSecondFromSpeed(way.getTag("maxspeed:reverse")); 
+            
+        if (speed == null && way.hasTag("maxspeed:lanes")) {
+            for (String lane : way.getTag("maxspeed:lanes").split("\\|")) {
+                currentSpeed = getMetersSecondFromSpeed(lane);
+                // Pick the largest speed from the tag
+                // currentSpeed might be null if it was invalid, for instance 10|fast|20
+                if (currentSpeed != null && (speed == null || currentSpeed > speed))
+                    speed = currentSpeed;
+            }
+        }
+        
+        if (way.hasTag("maxspeed") && speed == null)
+            speed = getMetersSecondFromSpeed(way.getTag("maxspeed"));
+        
+        // this would be bad, as the segment could never be traversed by an automobile
+        // The small epsilon is to account for possible rounding errors
+        if (speed != null && speed < 0.0001)
+            _log.warn("Zero or negative automobile speed detected at {} based on OSM maxspeed tags;" +
+            		" ignoring these tags", this);
+        
+        // if there was a defined speed and it's not 0, we're done
+        if (speed != null)
+            return speed;
+                    
+        // otherwise, we use the speedPickers
+        
+        int bestScore = 0;
+        Float bestSpeed = null;
+        int score;
+        
+        // SpeedPickers are constructed in DefaultWayPropertySetSource with an OSM specifier
+        // (e.g. highway=motorway) and a default speed for that segment.
+        for (SpeedPicker picker : speedPickers) {
+            OSMSpecifier specifier = picker.getSpecifier();
+            score = specifier.matchScore(way);
+            if (score > bestScore) {
+                bestScore = score;
+                bestSpeed = picker.getSpeed();
+            }
+        }
+        
+        if (bestSpeed != null)
+            return bestSpeed;
+        else
+            return this.defaultSpeed;
+    }
 
     public Set<Alert> getNoteForWay(OSMWithTags way) {
         HashSet<Alert> out = new HashSet<Alert>();
@@ -229,5 +311,43 @@ public class WayPropertySet {
     public int hashCode() {
         return defaultProperties.hashCode() + wayProperties.hashCode() + creativeNamers.hashCode()
                 + slopeOverrides.hashCode();
+    }
+
+    public void addSpeedPicker(SpeedPicker picker) {
+        this.speedPickers.add(picker);
+    }
+    
+    public Float getMetersSecondFromSpeed(String speed) {
+        Matcher m = maxSpeedPattern.matcher(speed);
+        if (!m.matches())
+            return null;
+        
+        float originalUnits;
+        try {
+            originalUnits = (float) Double.parseDouble(m.group(1));
+        } catch (NumberFormatException e) {
+            _log.warn("Could not parse max speed {}", m.group(1));
+            return null;
+        }
+        
+        String units = m.group(2);
+        if (units == null || units.equals(""))
+            units = "kmh";
+        
+        // we'll be doing quite a few string comparisons here
+        units = units.intern();
+        
+        float metersSecond;
+        
+        if (units == "kmh" || units == "km/h" || units == "kmph" || units == "kph")
+            metersSecond = 0.277778f * originalUnits;
+        else if (units == "mph")
+            metersSecond = 0.446944f * originalUnits;
+        else if (units == "knots")
+            metersSecond = 0.514444f * originalUnits;
+        else
+            return null;
+        
+        return metersSecond;
     }
 }

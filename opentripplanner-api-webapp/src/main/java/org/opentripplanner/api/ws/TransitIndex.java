@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -30,9 +31,12 @@ import javax.xml.bind.annotation.XmlRootElement;
 import org.codehaus.jettison.json.JSONException;
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Route;
+import org.onebusaway.gtfs.model.ServiceCalendar;
+import org.onebusaway.gtfs.model.ServiceCalendarDate;
 import org.onebusaway.gtfs.model.Stop;
 import org.opentripplanner.api.model.error.TransitError;
 import org.opentripplanner.api.model.transit.AgencyList;
+import org.opentripplanner.api.model.transit.CalendarData;
 import org.opentripplanner.api.model.transit.ModeList;
 import org.opentripplanner.api.model.transit.RouteData;
 import org.opentripplanner.api.model.transit.RouteDataList;
@@ -53,9 +57,13 @@ import org.opentripplanner.routing.services.TransitIndexService;
 import org.opentripplanner.routing.transit_index.RouteSegment;
 import org.opentripplanner.routing.transit_index.RouteVariant;
 import org.opentripplanner.routing.transit_index.adapters.RouteType;
+import org.opentripplanner.routing.transit_index.adapters.ServiceCalendarDateType;
+import org.opentripplanner.routing.transit_index.adapters.ServiceCalendarType;
 import org.opentripplanner.routing.transit_index.adapters.StopType;
 import org.opentripplanner.routing.transit_index.adapters.TripType;
 import org.opentripplanner.routing.vertextype.TransitStop;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.sun.jersey.api.spring.Autowire;
@@ -69,11 +77,13 @@ import com.vividsolutions.jts.geom.Envelope;
 @Autowire
 public class TransitIndex {
 
+    private static final Logger _log = LoggerFactory.getLogger(TransitIndex.class);
+
     private static final double STOP_SEARCH_RADIUS = 200;
 
     private GraphService graphService;
 
-    private static final long MAX_STOP_TIME_QUERY_INTERVAL = 86400;
+    private static final long MAX_STOP_TIME_QUERY_INTERVAL = 86400 * 2;
 
     @Autowired
     public void setGraphService(GraphService graphService) {
@@ -126,6 +136,12 @@ public class TransitIndex {
             response.variants = variants;
             response.directions = new ArrayList<String>(
                     transitIndexService.getDirectionsForRoute(routeId));
+            response.route = new RouteType();
+            for (RouteVariant variant : transitIndexService.getVariantsForRoute(routeId)) {
+                Route route = variant.getRoute();
+                response.route = new RouteType(route, extended);
+                break;
+            }
 
             if (references != null && references.equals(true)) {
                 response.stops = new ArrayList<StopType>();
@@ -180,21 +196,28 @@ public class TransitIndex {
     }
 
     /**
-     * Return stops near a point
+     * Return stops near a point. The default search radius is 200m, but this can be changed with the radius parameter (in meters)
      */
     @GET
     @Path("/stopsNearPoint")
     @Produces({ MediaType.APPLICATION_JSON })
     public Object getStopsNearPoint(@QueryParam("agency") String agency,
             @QueryParam("lat") Double lat, @QueryParam("lon") Double lon,
-            @QueryParam("extended") Boolean extended, @QueryParam("routerId") String routerId)
-            throws JSONException {
+            @QueryParam("extended") Boolean extended, @QueryParam("routerId") String routerId,
+            @QueryParam("radius") Double radius) throws JSONException {
+
+        // default search radius.
+        Double searchRadius = (radius == null) ? STOP_SEARCH_RADIUS : radius;
 
         Graph graph = getGraph(routerId);
 
+        if (Double.isNaN(searchRadius) || searchRadius <= 0) {
+            searchRadius = STOP_SEARCH_RADIUS;
+        }
+
         StreetVertexIndexService streetVertexIndexService = graph.streetIndex;
         List<TransitStop> stops = streetVertexIndexService.getNearbyTransitStops(new Coordinate(
-                lon, lat), STOP_SEARCH_RADIUS);
+                lon, lat), searchRadius);
         TransitIndexService transitIndexService = graph.getService(TransitIndexService.class);
         if (transitIndexService == null) {
             return new TransitError(
@@ -263,7 +286,8 @@ public class TransitIndex {
         }
 
         if (endTime - startTime > MAX_STOP_TIME_QUERY_INTERVAL) {
-            return new TransitError("Max stop time query interval is " + (endTime - startTime));
+            return new TransitError("Max stop time query interval is " + (endTime - startTime)
+                    + " > " + MAX_STOP_TIME_QUERY_INTERVAL);
         }
         TransitIndexService transitIndexService = getGraph(routerId).getService(
                 TransitIndexService.class);
@@ -272,7 +296,7 @@ public class TransitIndex {
                     "No transit index found.  Add TransitIndexBuilder to your graph builder configuration and rebuild your graph.");
         }
 
-        // if no stopAgency is set try to search through all diffrent agencies
+        // if no stopAgency is set try to search through all different agencies
         Graph graph = getGraph(routerId);
 
         // add all departures
@@ -289,16 +313,17 @@ public class TransitIndex {
             AgencyAndId stop = new AgencyAndId(stopAgencyId, stopId);
             Edge preBoardEdge = transitIndexService.getPreBoardEdge(stop);
             if (preBoardEdge == null)
-                break;
+                continue;
             Vertex boarding = preBoardEdge.getToVertex();
 
             RoutingRequest options = makeTraverseOptions(startTime, routerId);
 
-            for (Edge e : boarding.getOutgoing()) {
+            HashMap<Long, Edge> seen = new HashMap();
+            OUTER: for (Edge e : boarding.getOutgoing()) {
                 // each of these edges boards a separate set of trips
                 for (StopTime st : getStopTimesForBoardEdge(startTime, endTime, options, e,
                         extended)) {
-                    // diffrent parameters
+                    // different parameters
                     st.phase = "departure";
                     if (extended != null && extended.equals(true)) {
                         if (routeId != null && !routeId.equals("")
@@ -310,6 +335,13 @@ public class TransitIndex {
                     } else
                         result.stopTimes.add(st);
                     trips.add(st.trip);
+                    if (seen.containsKey(st.time)) {
+                        Edge old = seen.get(st.time);
+                        System.out.println("DUP: " + old);
+                        getStopTimesForBoardEdge(startTime, endTime, options, e, extended);
+                        // break OUTER;
+                    }
+                    seen.put(st.time, e);
                 }
             }
 
@@ -323,24 +355,27 @@ public class TransitIndex {
                         // diffrent parameters
                         st.phase = "arrival";
                         if (extended != null && extended.equals(true)) {
+                            if (references != null && references.equals(true))
+                                result.routes.add(st.trip.getRoute());
                             if (routeId != null && !routeId.equals("")
                                     && !st.trip.getRoute().getId().getId().equals(routeId))
                                 continue;
-                            if (references != null && references.equals(true))
-                                result.routes.add(st.trip.getRoute());
                             result.stopTimes.add(st);
                         } else
                             result.stopTimes.add(st);
                     }
                 }
             }
+
         }
-        Collections.sort(result.stopTimes, new Comparator<StopTime>(){
+        Collections.sort(result.stopTimes, new Comparator<StopTime>() {
 
             @Override
             public int compare(StopTime o1, StopTime o2) {
-                if (o1.phase.equals("arrival") && o2.phase.equals("departure")) return 1;
-                if (o1.phase.equals("departure") && o2.phase.equals("arrival")) return -1;
+                if (o1.phase.equals("arrival") && o2.phase.equals("departure"))
+                    return 1;
+                if (o1.phase.equals("departure") && o2.phase.equals("arrival"))
+                    return -1;
                 return o1.time - o2.time > 0 ? 1 : -1;
             }
 
@@ -360,10 +395,71 @@ public class TransitIndex {
         Graph graph = getGraph(routerId);
         Collection<Vertex> vertices = graph.getVertices();
         Iterator<Vertex> it = vertices.iterator();
-        options.setFrom(it.next().getLabel());
-        options.setTo(it.next().getLabel());
+        options.setFromString(it.next().getLabel());
+        options.setToString(it.next().getLabel());
         options.setRoutingContext(graph);
         return options;
+    }
+
+    /**
+     * Return variant for a trip
+     */
+    @GET
+    @Path("/variantForTrip")
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    public Object getVariantForTrip(@QueryParam("tripAgency") String tripAgency,
+            @QueryParam("tripId") String tripId, @QueryParam("routerId") String routerId)
+            throws JSONException {
+
+        TransitIndexService transitIndexService = getGraph(routerId).getService(
+                TransitIndexService.class);
+
+        if (transitIndexService == null) {
+            return new TransitError(
+                    "No transit index found.  Add TransitIndexBuilder to your graph builder configuration and rebuild your graph.");
+        }
+
+        AgencyAndId trip = new AgencyAndId(tripAgency, tripId);
+        RouteVariant variant = transitIndexService.getVariantForTrip(trip);
+
+        return variant;
+    }
+
+    /**
+     * Return information about calendar for given agency
+     */
+    @GET
+    @Path("/calendar")
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_XML })
+    public Object getCalendar(@QueryParam("agency") String agency,
+            @QueryParam("routerId") String routerId) throws JSONException {
+
+        TransitIndexService transitIndexService = getGraph(routerId).getService(
+                TransitIndexService.class);
+
+        if (transitIndexService == null) {
+            return new TransitError(
+                    "No transit index found.  Add TransitIndexBuilder to your graph builder configuration and rebuild your graph.");
+        }
+
+        CalendarData response = new CalendarData();
+        response.calendarList = new ArrayList<ServiceCalendarType>();
+        response.calendarDatesList = new ArrayList<ServiceCalendarDateType>();
+
+        for (String agencyId : getAgenciesIds(agency, routerId)) {
+            List<ServiceCalendar> scList = transitIndexService.getCalendarsByAgency(agencyId);
+            List<ServiceCalendarDate> scdList = transitIndexService
+                    .getCalendarDatesByAgency(agencyId);
+
+            if (scList != null)
+                for (ServiceCalendar sc : scList)
+                    response.calendarList.add(new ServiceCalendarType(sc));
+            if (scdList != null)
+                for (ServiceCalendarDate scd : scdList)
+                    response.calendarDatesList.add(new ServiceCalendarDateType(scd));
+        }
+
+        return response;
     }
 
     /**

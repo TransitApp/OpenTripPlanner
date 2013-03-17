@@ -25,6 +25,7 @@ import junit.framework.TestCase;
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Stop;
 import org.opentripplanner.common.geometry.GeometryUtils;
+import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.routing.algorithm.GenericAStar;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.State;
@@ -83,17 +84,27 @@ public class TestHalfEdges extends TestCase {
         bl = new IntersectionVertex(graph, "bl", -74.01, 40.0);
         br = new IntersectionVertex(graph, "br", -74.00, 40.0);
 
-        top = new PlainStreetEdge(tl, tr, GeometryUtils.makeLineString(-74.01, 40.01, -74.0, 40.01), "top", 1500, StreetTraversalPermission.ALL, false);
-        bottom = new PlainStreetEdge(br, bl, GeometryUtils.makeLineString(-74.01, 40.0, -74.0, 40.0), "bottom", 1500, StreetTraversalPermission.ALL, false);
-        left = new PlainStreetEdge(bl, tl, GeometryUtils.makeLineString(-74.01, 40.0, -74.01,
-                40.01), "left", 1500, StreetTraversalPermission.ALL, false);
-        right = new PlainStreetEdge(br, tr, GeometryUtils.makeLineString(-74.0, 40.0, -74.0,
-                40.01), "right", 1500, StreetTraversalPermission.PEDESTRIAN, false);
+        top = new PlainStreetEdge(tl, tr,
+                GeometryUtils.makeLineString(-74.01, 40.01, -74.0, 40.01), "top", 1500,
+                StreetTraversalPermission.ALL, false);
+        bottom = new PlainStreetEdge(br, bl,
+                GeometryUtils.makeLineString(-74.01, 40.0, -74.0, 40.0), "bottom", 1500,
+                StreetTraversalPermission.ALL, false);
+        left = new PlainStreetEdge(bl, tl,
+                GeometryUtils.makeLineString(-74.01, 40.0, -74.01, 40.01), "left", 1500,
+                StreetTraversalPermission.ALL, false);
+        right = new PlainStreetEdge(br, tr,
+                GeometryUtils.makeLineString(-74.0, 40.0, -74.0, 40.01), "right", 1500,
+                StreetTraversalPermission.PEDESTRIAN, false);
 
-        PlainStreetEdge topBack = new PlainStreetEdge(tr, tl, (LineString) top.getGeometry().reverse(), "topBack", 1500, StreetTraversalPermission.ALL, true);
-        PlainStreetEdge bottomBack = new PlainStreetEdge(br, bl, (LineString) bottom.getGeometry().reverse(), "bottomBack", 1500, StreetTraversalPermission.ALL, true);        
-        leftBack = new PlainStreetEdge(tl, bl, (LineString) left.getGeometry().reverse(), "leftBack", 1500, StreetTraversalPermission.ALL, true);
-        rightBack = new PlainStreetEdge(tr, br, (LineString) right.getGeometry().reverse(), "rightBack", 1500, StreetTraversalPermission.ALL, true);
+        PlainStreetEdge topBack = new PlainStreetEdge(tr, tl, (LineString) top.getGeometry()
+                .reverse(), "topBack", 1500, StreetTraversalPermission.ALL, true);
+        PlainStreetEdge bottomBack = new PlainStreetEdge(br, bl, (LineString) bottom.getGeometry()
+                .reverse(), "bottomBack", 1500, StreetTraversalPermission.ALL, true);
+        leftBack = new PlainStreetEdge(tl, bl, (LineString) left.getGeometry().reverse(),
+                "leftBack", 1500, StreetTraversalPermission.ALL, true);
+        rightBack = new PlainStreetEdge(tr, br, (LineString) right.getGeometry().reverse(),
+                "rightBack", 1500, StreetTraversalPermission.ALL, true);
 
         Stop s1 = new Stop();
         s1.setName("transitVertex 1");
@@ -109,6 +120,8 @@ public class TestHalfEdges extends TestCase {
 
         station1 = new TransitStop(graph, s1);
         station2 = new TransitStop(graph, s2);
+        station1.addMode(TraverseMode.RAIL);
+        station2.addMode(TraverseMode.RAIL);
     }
 
     public void testHalfEdges() {
@@ -226,26 +239,26 @@ public class TestHalfEdges extends TestCase {
             assertNotSame(s.getVertex(), graph.getVertex("rightBack"));
         }
     }
-    
+
     /**
-     * Test that alerts on split streets are preserved, i.e. if there are alerts on the street that is split
-     * the same alerts should be present on the new street.
+     * Test that alerts on split streets are preserved, i.e. if there are alerts on the street that is split the same alerts should be present on the
+     * new street.
      */
-    public void testStreetSplittingAlerts () {
+    public void testStreetSplittingAlerts() {
         HashSet<Edge> turns = new HashSet<Edge>();
         turns.add(left);
         turns.add(leftBack);
 
         Set<Alert> alert = new HashSet<Alert>();
         alert.add(Alert.createSimpleAlerts("This is the alert"));
-                
+
         left.setNote(alert);
         leftBack.setNote(alert);
-                
+
         StreetLocation start = StreetLocation.createStreetLocation(graph, "start", "start",
                 cast(turns, StreetEdge.class),
                 new LinearLocation(0, 0.4).getCoordinate(left.getGeometry()));
-        
+
         // The alert should be preserved
         // traverse the FreeEdge from the StreetLocation to the new IntersectionVertex
         RoutingRequest req = new RoutingRequest();
@@ -259,26 +272,26 @@ public class TestHalfEdges extends TestCase {
                 break;
             }
         }
-        
+
         assertEquals(alert, traversedOne.getBackAlerts());
         assertNotSame(left, traversedOne.getBackEdge().getFromVertex());
         assertNotSame(leftBack, traversedOne.getBackEdge().getFromVertex());
-        
+
         // now, make sure wheelchair alerts are preserved
         Set<Alert> wheelchairAlert = new HashSet<Alert>();
         wheelchairAlert.add(Alert.createSimpleAlerts("This is the wheelchair alert"));
-        
+
         left.setNote(null);
         leftBack.setNote(null);
         left.setWheelchairNote(wheelchairAlert);
         leftBack.setWheelchairNote(wheelchairAlert);
-        
+
         req.setWheelchairAccessible(true);
-        
+
         start = StreetLocation.createStreetLocation(graph, "start", "start",
                 cast(turns, StreetEdge.class),
                 new LinearLocation(0, 0.4).getCoordinate(left.getGeometry()));
-        
+
         traversedOne = new State((Vertex) start, req);
         for (Edge e : start.getOutgoing()) {
             currentState = e.traverse(traversedOne);
@@ -297,17 +310,17 @@ public class TestHalfEdges extends TestCase {
         StreetVertexIndexServiceImpl finder = new StreetVertexIndexServiceImpl(graph);
         finder.setup();
         // test that the local stop finder finds stops
-        Coordinate c = new Coordinate(-74.005000001, 40.01);
-        assertTrue(finder.getLocalTransitStops(c, 100).size() > 0);
+        GenericLocation loc = new GenericLocation(40.01, -74.005000001);
+        assertTrue(finder.getLocalTransitStops(loc.getCoordinate(), 100).size() > 0);
 
         // test that the closest vertex finder returns the closest vertex
-        StreetLocation some = (StreetLocation) finder.getClosestVertex(
-                new Coordinate(-74.00, 40.00), null, null);
+        StreetLocation some = (StreetLocation) finder.getVertexForLocation(
+                new GenericLocation(40.00, -74.00), null);
         assertNotNull(some);
 
         // test that the closest vertex finder correctly splits streets
-        StreetLocation start = (StreetLocation) finder.getClosestVertex(new Coordinate(-74.01,
-                40.004), null, null);
+        StreetLocation start = (StreetLocation) finder.getVertexForLocation(
+                new GenericLocation(40.004, -74.01), null);
         assertNotNull(start);
         assertTrue("wheelchair accessibility is correctly set (splitting)",
                 start.isWheelchairAccessible());
@@ -316,8 +329,8 @@ public class TestHalfEdges extends TestCase {
         assertEquals(4, extras.size());
 
         RoutingRequest biking = new RoutingRequest(new TraverseModeSet(TraverseMode.BICYCLE));
-        StreetLocation end = (StreetLocation) finder.getClosestVertex(
-                new Coordinate(-74.0, 40.008), null, biking);
+        StreetLocation end = (StreetLocation) finder.getVertexForLocation(
+                new GenericLocation(40.008, -74.0), biking);
         assertNotNull(end);
 
         extras = end.getExtra();
@@ -326,8 +339,8 @@ public class TestHalfEdges extends TestCase {
         // test that the closest vertex finder also adds an edge to transit
         // stops (if you are really close to the transit stop relative to the
         // street)
-        StreetLocation location = (StreetLocation) finder.getClosestVertex(new Coordinate(
-                -74.004999, 40.00999), null, new RoutingRequest());
+        StreetLocation location = (StreetLocation) finder.getVertexForLocation(
+                new GenericLocation(40.00999, -74.004999), new RoutingRequest());
         assertTrue(location.isWheelchairAccessible());
         boolean found = false;
         for (Edge extra : location.getExtra()) {
@@ -339,10 +352,11 @@ public class TestHalfEdges extends TestCase {
 
         // test that it is possible to travel between two splits on the same street
         RoutingRequest walking = new RoutingRequest(TraverseMode.WALK);
-        start = (StreetLocation) finder.getClosestVertex(new Coordinate(-74.0, 40.004), null,
+        start = (StreetLocation) finder.getVertexForLocation(new GenericLocation(40.004, -74.0),
                 walking);
-        end = (StreetLocation) finder.getClosestVertex(new Coordinate(-74.0, 40.008), null,
-                walking, start.getExtra());
+        end = (StreetLocation) finder.getVertexForLocation(new GenericLocation(40.008, -74.0),
+                walking);
+        //, start.getExtra());
         assertNotNull(end);
         walking.setRoutingContext(graph, start, end);
         ShortestPathTree spt = aStar.getShortestPathTree(walking);

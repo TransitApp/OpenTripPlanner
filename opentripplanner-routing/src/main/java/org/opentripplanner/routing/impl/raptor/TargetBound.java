@@ -38,6 +38,8 @@ import org.opentripplanner.routing.spt.ArrayMultiShortestPathTree;
 import org.opentripplanner.routing.spt.ShortestPathTree;
 import org.opentripplanner.routing.spt.ShortestPathTreeFactory;
 import org.opentripplanner.routing.vertextype.TransitStop;
+import org.opentripplanner.routing.vertextype.TransitStopArrive;
+import org.opentripplanner.routing.vertextype.TransitStopDepart;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
@@ -109,7 +111,7 @@ public class TargetBound implements SearchTerminationStrategy, SkipTraverseResul
     public boolean shouldSearchContinue(Vertex origin, Vertex target, State current,
             ShortestPathTree spt, RoutingRequest traverseOptions) {
         final Vertex vertex = current.getVertex();
-        if (vertex instanceof TransitStop) {
+        if (vertex instanceof TransitStop || vertex instanceof TransitStopDepart || vertex instanceof TransitStopArrive) {
             transitStopsVisited.add(current);
         }
         if (vertex == realTarget) {
@@ -208,11 +210,13 @@ public class TargetBound implements SearchTerminationStrategy, SkipTraverseResul
         
         double stateTime = current.getOptimizedElapsedTime() + minTime;
 
-        double walkDistance = FastMath.max(optimisticDistance * 1.1, optimisticDistance + transferTimeInWalkDistance);
+        double walkDistance = FastMath.max(optimisticDistance * Raptor.WALK_EPSILON, optimisticDistance + transferTimeInWalkDistance);
 
         int i = 0;
         boolean prevBounded = !bounders.isEmpty();
         for (State bounder : bounders) {
+            if (removedBoundingStates.contains(bounder))
+                continue;
             if (current.getWeight() + minTime + walkTime * (options.getWalkReluctance() - 1) > bounder.getWeight() * WORST_WEIGHT_DIFFERENCE_FACTOR) {
                 return true;
             }

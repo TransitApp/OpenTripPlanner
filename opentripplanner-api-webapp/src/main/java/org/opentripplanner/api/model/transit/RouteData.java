@@ -23,12 +23,16 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.opentripplanner.routing.transit_index.RouteVariant;
 import org.opentripplanner.routing.transit_index.adapters.AgencyAndIdAdapter;
+import org.opentripplanner.routing.transit_index.adapters.RouteType;
 import org.opentripplanner.routing.transit_index.adapters.StopType;
+
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @XmlRootElement(name = "RouteData")
 public class RouteData {
     @XmlElement
     @XmlJavaTypeAdapter(AgencyAndIdAdapter.class)
+    @JsonSerialize
     public AgencyAndId id;
 
     @XmlElementWrapper
@@ -39,4 +43,7 @@ public class RouteData {
 
     @XmlElementWrapper
     public List<String> directions;
+    
+    @XmlElement(name = "route")
+    public RouteType route;
 }

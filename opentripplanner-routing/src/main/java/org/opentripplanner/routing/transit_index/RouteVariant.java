@@ -20,24 +20,27 @@ import java.util.HashMap;
 import java.util.List;
 
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import org.codehaus.jackson.annotate.JsonIgnore;
-import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Stop;
 import org.onebusaway.gtfs.model.Trip;
 import org.opentripplanner.common.geometry.GeometryUtils;
 import org.opentripplanner.gtfs.GtfsLibrary;
+import org.opentripplanner.model.json_serialization.EncodedPolylineJSONSerializer;
 import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.edgetype.PatternInterlineDwell;
 import org.opentripplanner.routing.graph.Edge;
-import org.opentripplanner.routing.transit_index.adapters.AgencyAndIdArrayListAdapter;
 import org.opentripplanner.routing.transit_index.adapters.LineStringAdapter;
-import org.opentripplanner.routing.transit_index.adapters.StopAgencyAndIdArrayListAdapter;
+import org.opentripplanner.routing.transit_index.adapters.StopAgencyAndIdAdapter;
+import org.opentripplanner.routing.transit_index.adapters.TripsModelInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.LineString;
@@ -53,6 +56,7 @@ import com.vividsolutions.jts.geom.LineString;
  * @author novalis
  * 
  */
+@XmlRootElement(name = "RouteVariant")
 public class RouteVariant implements Serializable {
     private static final Logger _log = LoggerFactory.getLogger(RouteVariant.class);
 
@@ -68,10 +72,8 @@ public class RouteVariant implements Serializable {
 
     private TraverseMode mode;
 
-    @XmlJavaTypeAdapter(AgencyAndIdArrayListAdapter.class)
-    private ArrayList<AgencyAndId> trips;
+    private ArrayList<TripsModelInfo> trips;
 
-    @XmlJavaTypeAdapter(StopAgencyAndIdArrayListAdapter.class)
     private ArrayList<Stop> stops;
 
     /** An unordered list of all segments for this route */
@@ -100,24 +102,11 @@ public class RouteVariant implements Serializable {
     public RouteVariant(Route route, ArrayList<Stop> stops) {
         this.route = route;
         this.stops = stops;
-        trips = new ArrayList<AgencyAndId>();
+        trips = new ArrayList<TripsModelInfo>();
         segments = new ArrayList<RouteSegment>();
         exemplarSegments = new ArrayList<RouteSegment>();
         interlines = new ArrayList<PatternInterlineDwell>();
         this.mode = GtfsLibrary.getTraverseMode(route);
-    }
-
-    public void addTrip(Trip trip) {
-        if (!trips.contains(trip.getId())) {
-            trips.add(trip.getId());
-            if (direction == null) {
-                direction = trip.getDirectionId();
-            } else {
-                if (!direction.equals(trip.getDirectionId())) {
-                    direction = MULTIDIRECTION;
-                }
-            }
-        }
     }
 
     public void addExemplarSegment(RouteSegment segment) {
@@ -185,7 +174,10 @@ public class RouteVariant implements Serializable {
         return out;
     }
 
-    public ArrayList<Stop> getStops() {
+    @XmlElementWrapper
+    @XmlElement(name = "stop")
+    @XmlJavaTypeAdapter(StopAgencyAndIdAdapter.class)
+    public List<Stop> getStops() {
         return stops;
     }
 
@@ -201,7 +193,9 @@ public class RouteVariant implements Serializable {
         return name;
     }
 
-    public List<AgencyAndId> getTrips() {
+    @XmlElementWrapper
+    @XmlElement(name = "trip")
+    public List<TripsModelInfo> getTrips() {
         return trips;
     }
 
@@ -218,6 +212,7 @@ public class RouteVariant implements Serializable {
         return direction;
     }
 
+    @JsonSerialize(using = EncodedPolylineJSONSerializer.class)
     @XmlJavaTypeAdapter(LineStringAdapter.class)
     public LineString getGeometry() {
         if (geometry == null) {
@@ -231,8 +226,6 @@ public class RouteVariant implements Serializable {
             Coordinate[] coordArray = new Coordinate[coords.size()];
             geometry = GeometryUtils.getGeometryFactory().createLineString(
                     coords.toArray(coordArray));
-
-
 
         }
         return geometry;
@@ -255,4 +248,17 @@ public class RouteVariant implements Serializable {
     public List<PatternInterlineDwell> getInterlines() {
         return interlines;
     }
+
+    public void addTrip(Trip trip, int number) {
+        this.trips.add(new TripsModelInfo(trip.getTripHeadsign(), number, trip.getServiceId()
+                .getId(), trip.getId()));
+        if (direction == null) {
+            direction = trip.getDirectionId();
+        } else {
+            if (!direction.equals(trip.getDirectionId())) {
+                direction = MULTIDIRECTION;
+            }
+        }
+    }
+
 }

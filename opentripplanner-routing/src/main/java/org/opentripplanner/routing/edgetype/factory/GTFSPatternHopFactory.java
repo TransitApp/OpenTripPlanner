@@ -183,7 +183,7 @@ class InterlineSwitchoverKey {
 }
 
 class IndexedLineSegment {
-    private static final double RADIUS = SphericalDistanceLibrary.RADIUS_OF_EARTH_IN_KM * 1000;
+    private static final double RADIUS = SphericalDistanceLibrary.RADIUS_OF_EARTH_IN_M;
     int index;
     Coordinate start;
     Coordinate end;
@@ -298,8 +298,6 @@ class IndexedLineSegmentComparator implements Comparator<IndexedLineSegment> {
  */
 public class GTFSPatternHopFactory {
 
-    private static final double MAX_STOP_TO_SHAPE_DISTANCE = 150;
-
     private static final Logger _log = LoggerFactory.getLogger(GTFSPatternHopFactory.class);
 
     private static GeometryFactory _geometryFactory = GeometryUtils.getGeometryFactory();
@@ -331,6 +329,8 @@ public class GTFSPatternHopFactory {
     private int defaultStreetToStopTime;
 
     private static final DistanceLibrary distanceLibrary = SphericalDistanceLibrary.getInstance();
+
+    private double maxStopToShapeSnapDistance = 150;
 
     public GTFSPatternHopFactory(GtfsContext context) {
         this._dao = context.getDao();
@@ -442,6 +442,14 @@ public class GTFSPatternHopFactory {
             List<Frequency> frequencies = tripFrequencies.get(trip);
             if(frequencies != null) {
                 // before creating frequency-based trips, check for single-instance frequencies.
+                Collections.sort(frequencies, new Comparator<Frequency>() {
+
+                    @Override
+                    public int compare(Frequency o1, Frequency o2) {
+                        return o1.getStartTime() - o2.getStartTime();
+                    }
+                });
+
                 Frequency frequency = frequencies.get(0);
                 if (frequencies.size() > 1 || 
                     frequency.getStartTime() != stopTimes.get(0).getDepartureTime() ||
@@ -594,7 +602,7 @@ public class GTFSPatternHopFactory {
                     continue;
                 }
                 double distance = segment.distance(coord);
-                if (distance < MAX_STOP_TO_SHAPE_DISTANCE) {
+                if (distance < maxStopToShapeSnapDistance) {
                     stopSegments.add(segment);
                     maxSegmentIndex = index;
                     if (minSegmentIndexForThisStop == -1)
@@ -820,9 +828,18 @@ public class GTFSPatternHopFactory {
 
         pattern.setStops(stops);
 
-        pattern.setTripFlags(((trip.getWheelchairAccessible() == 1) ? TableTripPattern.FLAG_WHEELCHAIR_ACCESSIBLE : 0)
-        | (((trip.getRoute().getBikesAllowed() == 2 && trip.getTripBikesAllowed() != 1)
-            || trip.getTripBikesAllowed() == 2) ? TableTripPattern.FLAG_BIKES_ALLOWED : 0));
+        int wheelchair = 0;
+        if (trip.getWheelchairAccessible() == 1) {
+            wheelchair = TableTripPattern.FLAG_WHEELCHAIR_ACCESSIBLE;
+        }
+
+        int bikes = 0;
+        if ((trip.getRoute().getBikesAllowed() == 2 && trip.getTripBikesAllowed() != 1)
+                || trip.getTripBikesAllowed() == 2) {
+            bikes = TableTripPattern.FLAG_BIKES_ALLOWED;
+        }
+
+        pattern.setTripFlags(wheelchair | bikes);
 
         return new T2<FrequencyBasedTripPattern, List<FrequencyHop>>(pattern, hops);
     }
@@ -943,9 +960,9 @@ public class GTFSPatternHopFactory {
             Vertex fromVertex = context.stopNodes.get(pathway.getFromStop());
             Vertex toVertex = context.stopNodes.get(pathway.getToStop());
             if (pathway.isWheelchairTraversalTimeSet()) {
-                new PathwayEdge(fromVertex, toVertex, pathway.getTraversalTime());
-            } else {
                 new PathwayEdge(fromVertex, toVertex, pathway.getTraversalTime(), pathway.getWheelchairTraversalTime());
+            } else {
+                new PathwayEdge(fromVertex, toVertex, pathway.getTraversalTime());
             }
         }
     }
@@ -963,11 +980,11 @@ public class GTFSPatternHopFactory {
             
             if (stop.getLocationType() != 2) {
                 //add a vertex representing arriving at the stop
-                TransitStopArrive arrive = new TransitStopArrive(graph, stop);
+                TransitStopArrive arrive = new TransitStopArrive(graph, stop, stopVertex);
                 context.stopArriveNodes.put(stop, arrive);
 
                 //add a vertex representing departing from the stop
-                TransitStopDepart depart = new TransitStopDepart(graph, stop);
+                TransitStopDepart depart = new TransitStopDepart(graph, stop, stopVertex);
                 context.stopDepartNodes.put(stop, depart);
 
                 //add edges from arrive to stop and stop to depart
@@ -1136,6 +1153,7 @@ public class GTFSPatternHopFactory {
                     _log.warn(graph.addBuilderAnnotation(new StopAtEntrance(st1, true)));
                 }
             }
+            stopArrive.getStopVertex().addMode(mode);
             new TransitBoardAlight(stopDepart, psv0depart, hopIndex, mode);
             new TransitBoardAlight(psv1arrive, stopArrive, hopIndex, mode);
         }        
@@ -1319,9 +1337,9 @@ public class GTFSPatternHopFactory {
         
         Coordinate startCoord = new Coordinate(s0.getLon(), s0.getLat());
         Coordinate endCoord = new Coordinate(s1.getLon(), s1.getLat());
-        if (distanceLibrary.fastDistance(startCoord, geometryStartCoord) > MAX_STOP_TO_SHAPE_DISTANCE) {
+        if (distanceLibrary.fastDistance(startCoord, geometryStartCoord) > maxStopToShapeSnapDistance) {
             return false;
-        } else if (distanceLibrary.fastDistance(endCoord, geometryEndCoord) > MAX_STOP_TO_SHAPE_DISTANCE) {
+        } else if (distanceLibrary.fastDistance(endCoord, geometryEndCoord) > maxStopToShapeSnapDistance) {
             return false;
         }
         return true;
@@ -1478,16 +1496,18 @@ public class GTFSPatternHopFactory {
     }
 
     /**
-     * Create transfer edges between stops which are listed in transfers.txt.
+     * 1. Create edges between stops and their parent stations.
+     * 2. Create transfer edges between stops which are listed in transfers.txt.
+     * 
      * This is not usually useful, but it's nice for the NYC subway system, where
      * it's important to provide in-station transfers for fare computation.
+     * 
+     * NOTE: this method is only called when transfersTxtDefinesStationPaths is set to
+     * True for a given GFTS feed. 
      */
     public void createStationTransfers(Graph graph) {
 
-        /* connect stops to their parent stations
-         * TODO: provide a cost for these edges when stations and
-         * stops have different locations 
-         */
+        /*  1. Connect stops to their parent stations. */
         for (Stop stop : _dao.getAllStops()) {
             String parentStation = stop.getParentStation();
             if (parentStation != null) {
@@ -1514,19 +1534,21 @@ public class GTFSPatternHopFactory {
                 new FreeEdge(parentStopDepartVertex, stopDepartVertex);
                 new FreeEdge(stopDepartVertex, parentStopDepartVertex);
 
+                // TODO: provide a cost for these edges when stations and
+                // stops have different locations 
             }
         }
+        /* 2. Create transfer edges based on transfers.txt. */
         for (Transfer transfer : _dao.getAllTransfers()) {
 
             int type = transfer.getTransferType();
-            if (type == 3)
+            if (type == 3) // type 3 = transfer not possible
                 continue;
-
+            if (transfer.getFromStop().equals(transfer.getToStop())) {
+                continue;
+            }
             Vertex fromv = context.stopArriveNodes.get(transfer.getFromStop());
             Vertex tov = context.stopDepartNodes.get(transfer.getToStop());
-
-            if (fromv.equals(tov))
-                continue;
 
             double distance = distanceLibrary.distance(fromv.getCoordinate(), tov.getCoordinate());
             int time;
@@ -1553,7 +1575,7 @@ public class GTFSPatternHopFactory {
     }
 
     /**
-     * you might not want to delete dwell edges when using realtime updates, because new dwells 
+     * You might not want to delete dwell edges when using realtime updates, because new dwells 
      * might be introduced via trip updates.
      */
     public void setDeleteUselessDwells(boolean delete) {
@@ -1562,6 +1584,16 @@ public class GTFSPatternHopFactory {
 
     public void setStopContext(GtfsStopContext context) {
         this.context = context;
+    }
+
+
+    public double getMaxStopToShapeSnapDistance() {
+        return maxStopToShapeSnapDistance;
+    }
+
+
+    public void setMaxStopToShapeSnapDistance(double maxStopToShapeSnapDistance) {
+        this.maxStopToShapeSnapDistance = maxStopToShapeSnapDistance;
     }
 
 }

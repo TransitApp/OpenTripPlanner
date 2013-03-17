@@ -29,6 +29,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
@@ -851,8 +853,9 @@ public class VizGui extends JFrame implements VertexSelectionListener {
     	// there should be a ui element for walk distance and optimize type
     	options.setOptimize(OptimizeType.QUICK);
         options.setMaxWalkDistance(Double.MAX_VALUE);
-        options.from = from;
-        options.to   = to;
+        options.setDateTime(when);
+        options.setFromString(from);
+        options.setToString(to);
         options.numItineraries = 1;
         System.out.println("--------");
         System.out.println("Path from " + from + " to " + to + " at " + when);
@@ -920,6 +923,14 @@ public class VizGui extends JFrame implements VertexSelectionListener {
     }
 
     public void verticesSelected(final List<Vertex> selected) {
+        //sort vertices by name
+        Collections.sort(selected, new Comparator<Vertex>() {
+            @Override
+            public int compare(Vertex arg0, Vertex arg1) {
+                return arg0.getLabel().compareTo(arg1.getLabel());
+            }
+            
+        });
         ListModel data = new VertexList(selected);
         nearbyVertices.setModel(data);
     }
