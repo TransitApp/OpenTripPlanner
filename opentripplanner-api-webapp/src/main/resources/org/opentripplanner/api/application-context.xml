@@ -15,7 +15,7 @@
 	<context:component-scan base-package="org.opentripplanner.routing.impl"/>
 
 	<bean id="prototypeRoutingRequest" class="org.opentripplanner.routing.core.RoutingRequest">
-		<property name="waitAtBeginningFactor" value="0.95"/>
+		<property name="waitAtBeginningFactor" value="0.75"/>
 		<property name="maxWalkDistance" value="5000"/>
 		<property name="numItineraries" value="4"/>
 		<property name="maxTransfers" value="4"/>
