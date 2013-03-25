@@ -15,7 +15,9 @@
 	<context:component-scan base-package="org.opentripplanner.routing.impl"/>
 
 	<bean id="prototypeRoutingRequest" class="org.opentripplanner.routing.core.RoutingRequest">
-		<property name="waitAtBeginningFactor" value="0.75"/>
+		<property name="waitAtBeginningFactor" value="0.5"/>
+		<property name="walkReluctance" value="3.75"/>
+		<property name="waitReluctance" value="0.5"/>
 		<property name="maxWalkDistance" value="5000"/>
 		<property name="numItineraries" value="4"/>
 		<property name="maxTransfers" value="4"/>
@@ -26,7 +28,7 @@
 
 	<bean id="pathService" class="org.opentripplanner.routing.impl.RetryingPathServiceImpl">
         <property name="firstPathTimeout" value="10.0" />
-        <property name="multiPathTimeout" value="1.0" />
+        <property name="multiPathTimeout" value="5.0" />
 	</bean>
  
   <bean id="heuristicFactory" class="org.opentripplanner.routing.impl.DefaultRemainingWeightHeuristicFactoryImpl"/>
