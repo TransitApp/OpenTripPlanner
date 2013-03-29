@@ -137,6 +137,7 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
             String name, double length,
             StreetTraversalPermission permission, boolean back) {
         // use a default car speed of ~25 mph for splitter vertices and the like
+        // TODO(flamholz): do something smarter with the car speed here.
         this(v1, v2, geometry, name, length, permission, back, 11.2f);
     }
 
@@ -478,6 +479,10 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
 
     public boolean hasBogusName() {
         return hasBogusName;
+    }
+    
+    public boolean hasExplicitTurnRestrictions() {
+        return this.turnRestrictions != null && this.turnRestrictions.size() > 0;
     }
 
     public void setWheelchairNote(Set<Alert> wheelchairNotes) {

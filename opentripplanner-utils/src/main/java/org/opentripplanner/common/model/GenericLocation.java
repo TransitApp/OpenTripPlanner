@@ -200,6 +200,19 @@ public class GenericLocation implements Cloneable {
         return String.format("%s,%s", this.lat, this.lng);
     }
     
+    /**
+     * Returns a descriptive string that has the information that I wish toString() returned.
+     */
+    public String toDescriptiveString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<GenericLocation lat,lng=").append(this.lat).append(",").append(this.lng);
+        if (this.hasHeading()) {
+            sb.append(" heading=").append(this.heading);
+        }
+        sb.append(">");
+        return sb.toString();
+    }
+    
     @Override
     public GenericLocation clone() {
         try {

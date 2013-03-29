@@ -33,6 +33,8 @@ import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.impl.CandidateEdge;
 import org.opentripplanner.routing.vertextype.StreetVertex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
@@ -46,6 +48,8 @@ import com.vividsolutions.jts.linearref.LocationIndexedLine;
  */
 public class StreetLocation extends StreetVertex {
 
+    private static final Logger LOG = LoggerFactory.getLogger(StreetLocation.class);
+    
     private static DistanceLibrary distanceLibrary = SphericalDistanceLibrary.getInstance();
 
     private ArrayList<Edge> extra = new ArrayList<Edge>();
@@ -135,9 +139,13 @@ public class StreetLocation extends StreetVertex {
                 new FreeEdge(location, edgeLocation);
                 new FreeEdge(edgeLocation, location);
             } else {
+                // location is somewhere in the middle of the edge.
                 edgeLocation = location;
+                
+                // creates links from street head -> location -> street tail.
                 createHalfLocation(graph, location, label + " to " + tov.getLabel(), name,
                         nearestPoint, street);
+                
                 double distanceToNearestTransitStop = Math.min(
                         tov.getDistanceToNearestTransitStop(),
                         fromv.getDistanceToNearestTransitStop());
@@ -192,7 +200,10 @@ public class StreetLocation extends StreetVertex {
         newRight.setNoThruTraffic(street.isNoThruTraffic());
         newRight.setWheelchairNote(street.getWheelchairNotes());
         newRight.setNote(street.getNotes());
+        
+        LOG.debug("Copying {} TurnRestrictions", street.getTurnRestrictions().size());
         for (TurnRestriction turnRestriction : street.getTurnRestrictions()) {
+            LOG.debug("Adding TurnRestriction {}", turnRestriction);
             newRight.addTurnRestriction(turnRestriction);
         }
         base.extra.add(newLeft);
@@ -267,9 +278,17 @@ public class StreetLocation extends StreetVertex {
         return nRemoved;
     }
 
+    /**
+     * This finalizer is intended as a failsafe to prevent memory leakage in case someone does
+     * not remove temporary edges. It could even be considered an error if it does any work.
+     * removeTemporaryEdges is called by both this finalizer and the RoutingContext.destroy() 
+     * method, which is in turn called by the RoutingRequest.cleanup() method. You need to call 
+     * one of these after you handle a request and know that you no longer need the context.
+     */
     @Override
     public void finalize() {
-        removeTemporaryEdges();
+        if (removeTemporaryEdges() > 0)
+            LOG.error("Temporary edges were removed by finalizer: this is a memory leak.");
     }
 
 }

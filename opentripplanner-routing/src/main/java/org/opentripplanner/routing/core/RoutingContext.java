@@ -95,10 +95,7 @@ public class RoutingContext implements Cloneable {
     /* CONSTRUCTORS */
     
     /**
-     * Constructor that automatically computes to/from vertices from RoutingRequest.
-     * 
-     * @param routingRequest
-     * @param graph
+     * Constructor that automatically computes origin/target from RoutingRequest.
      */
     public RoutingContext(RoutingRequest routingRequest, Graph graph) {
         this(routingRequest, graph, null, null, true);
@@ -106,11 +103,6 @@ public class RoutingContext implements Cloneable {
 
     /**
      * Constructor that takes to/from vertices as input.
-     * 
-     * @param routingRequest
-     * @param graph
-     * @param from
-     * @param to
      */
     public RoutingContext(RoutingRequest routingRequest, Graph graph, Vertex from, Vertex to) {
         this(routingRequest, graph, from, to, false);
@@ -121,13 +113,9 @@ public class RoutingContext implements Cloneable {
      * 
      * TODO(flamholz): delete this flexible constructor and move the logic to constructors above appropriately.
      * 
-     * @param routingRequest
-     * @param graph
-     * @param from
-     * @param to
-     * @param findPlaces
+     * @param findPlaces if true, compute origin and target from RoutingRequest using spatial indices.
      */
-    public RoutingContext(RoutingRequest routingRequest, Graph graph, Vertex from, Vertex to,
+    private RoutingContext(RoutingRequest routingRequest, Graph graph, Vertex from, Vertex to,
             boolean findPlaces) {
         this.opt = routingRequest;
         this.graph = graph;
@@ -182,6 +170,17 @@ public class RoutingContext implements Cloneable {
             remainingWeightHeuristic = new TrivialRemainingWeightHeuristic();
         else
             remainingWeightHeuristic = heuristicFactory.getInstanceForSearch(opt);
+        
+        if (this.origin != null) {
+            LOG.debug("Origin vertex inbound edges {}", this.origin.getIncoming());
+            LOG.debug("Origin vertex outbound edges {}", this.origin.getOutgoing());
+        }
+        // target is where search will terminate, can be origin or destination depending on arriveBy
+        LOG.debug("Target vertex {}", this.target);
+        if (this.target!= null) {
+            LOG.debug("Destination vertex inbound edges {}", this.target.getIncoming());
+            LOG.debug("Destination vertex outbound edges {}", this.target.getOutgoing());
+        }
     }
     
     

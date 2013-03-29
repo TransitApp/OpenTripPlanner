@@ -109,13 +109,19 @@ public abstract class RoutingResource {
     /** The maximum number of possible itineraries to return. */
     @DefaultValue("-1") @QueryParam("numItineraries") protected List<Integer> numItineraries;
 
-    /** The list of preferred routes.  The format is agency_route, so TriMet_100. */
+    /**
+     * The list of preferred routes. The format is agency_[routename][_routeid], so TriMet_100 (100 is route short name) or Trimet__42 (two
+     * underscores, 42 is the route internal ID).
+     */
     @DefaultValue("") @QueryParam("preferredRoutes") protected List<String> preferredRoutes;
     
     /** The comma-separated list of preferred agencies. */
     @DefaultValue("") @QueryParam("preferredAgencies") protected List<String> preferredAgencies;
     
-    /** The list of unpreferred routes.  The format is agency_route, so TriMet_100. */
+    /**
+     * The list of unpreferred routes. The format is agency_[routename][_routeid], so TriMet_100 (100 is route short name) or Trimet__42 (two
+     * underscores, 42 is the route internal ID).
+     */
     @DefaultValue("") @QueryParam("unpreferredRoutes") protected List<String> unpreferredRoutes;
     
     /** The comma-separated list of unpreferred agencies. */
@@ -127,11 +133,24 @@ public abstract class RoutingResource {
      *  Atlantic Avenue should be included. */
     @DefaultValue("false") @QueryParam("showIntermediateStops") protected List<Boolean> showIntermediateStops;
 
-    /** The comma-separated list of banned routes.  The format is agency_route, so TriMet_100. */
+    /**
+     * The comma-separated list of banned routes. The format is agency_[routename][_routeid], so TriMet_100 (100 is route short name) or Trimet__42
+     * (two underscores, 42 is the route internal ID).
+     */
     @DefaultValue("") @QueryParam("bannedRoutes") protected List<String> bannedRoutes;
     
     /** The comma-separated list of banned agencies. */
     @DefaultValue("") @QueryParam("bannedAgencies") protected List<String> bannedAgencies;
+    
+    /**
+     * The list of preferred routes. The format is agency_[routename][_routeid], so TriMet_100 (100 is route short name) or Trimet__42 (two
+     * underscores, 42 is the route internal ID).
+     */
+    @DefaultValue("") @QueryParam("bannedRouteTypes") protected List<String> bannedRouteTypes;
+    
+    /** The comma-separated list of preferred agencies. */
+    @DefaultValue("") @QueryParam("bannedAgencyRouteTypes") protected List<String> bannedAgencyRouteTypes;
+   
     
     /** The comma-separated list of banned trips.  The format is agency_route[:stop*], so:
      * TriMet_24601 or TriMet_24601:0:1:2:17:18:19
@@ -292,7 +311,8 @@ public abstract class RoutingResource {
         request.setUnpreferredAgencies(get(unpreferredAgencies, n, request.getUnpreferredAgenciesStr()));
         request.setBannedRoutes(get(bannedRoutes, n, request.getBannedRouteStr()));
         request.setBannedAgencies(get(bannedAgencies, n, request.getBannedAgenciesStr()));
-        
+        request.setBannedAgencyRouteTypes(get(bannedAgencyRouteTypes, n, request.getBannedRouteTypesStr()));
+        request.setBannedRouteTypes(get(bannedRouteTypes, n, request.getBannedRouteTypesStr()));
         HashMap<AgencyAndId, BannedStopSet> bannedTripMap = makeBannedTripMap(get(bannedTrips, n, null));
         if (bannedTripMap != null) {
             request.setBannedTrips(bannedTripMap);
