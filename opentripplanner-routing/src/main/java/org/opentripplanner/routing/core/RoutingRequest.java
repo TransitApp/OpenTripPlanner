@@ -215,6 +215,12 @@ public class RoutingRequest implements Cloneable, Serializable {
 
     /** Do not use certain named agencies */
     public HashSet<String> bannedAgencies = new HashSet<String>();
+    
+    /** Set of banned routeType by user. */
+    public HashSet<Integer> bannedRouteTypes = new HashSet<Integer>();
+    
+    /** Set of banned routeType per agency by user. */
+    public HashSet<String> bannedAgencyRouteTypes = new HashSet<String>();
 
     /** Do not use certain trips */
     public HashMap<AgencyAndId, BannedStopSet> bannedTrips = new HashMap<AgencyAndId, BannedStopSet>();
@@ -524,7 +530,20 @@ public class RoutingRequest implements Cloneable, Serializable {
         if (s != null && !s.equals(""))
             bannedAgencies = new HashSet<String>(Arrays.asList(s.split(",")));
     }
-
+    
+    public void setBannedAgencyRouteTypes(String s) {
+    	if (s != null && !s.equals(""))
+    		bannedAgencyRouteTypes = new HashSet<String>(Arrays.asList(s.split(",")));
+    }
+    
+    public void setBannedRouteTypes(String s) {
+    	if (s != null && !s.equals("")) {
+    		bannedRouteTypes = new HashSet<Integer>();
+    		for (String type : s.split(",")) 
+    			bannedRouteTypes.add(Integer.parseInt(type));
+    	}
+    }
+    
     public final static int MIN_SIMILARITY = 1000;
 
     public int similarity(RoutingRequest options) {
@@ -821,6 +840,8 @@ public class RoutingRequest implements Cloneable, Serializable {
                 && bannedTrips.equals(other.bannedTrips)
                 && preferredRoutes.equals(other.preferredRoutes)
                 && unpreferredRoutes.equals(other.unpreferredRoutes)
+                && bannedRouteTypes.equals(other.bannedRouteTypes)
+                && bannedAgencyRouteTypes.equals(other.bannedAgencyRouteTypes)
                 && transferSlack == other.transferSlack
                 && boardSlack == other.boardSlack
                 && alightSlack == other.alightSlack
@@ -953,6 +974,13 @@ public class RoutingRequest implements Cloneable, Serializable {
         }
         return builder.toString();
     }
+    
+    private String getRouteTypeStr(HashSet<Integer> routeTypes) {
+        HashSet<String> routesRepresentation = new HashSet<String>();
+        for (Integer integer : routeTypes) 
+        	routesRepresentation.add(integer.toString());
+        return getRouteOrAgencyStr(routesRepresentation);
+    }
 
     public String getPreferredRouteStr() {
         return preferredRoutes.asString();
@@ -980,6 +1008,14 @@ public class RoutingRequest implements Cloneable, Serializable {
     
     public String getBannedAgenciesStr() {
     	return getRouteOrAgencyStr(bannedAgencies);
+    }
+    
+    public String getBannedAgencyRouteTypesStr() {
+    	return getRouteOrAgencyStr(bannedAgencyRouteTypes);
+    }
+    
+    public String getBannedRouteTypesStr() {
+    	return getRouteTypeStr(bannedRouteTypes);
     }
 
     public void setMaxWalkDistance(double maxWalkDistance) {
@@ -1019,6 +1055,29 @@ public class RoutingRequest implements Cloneable, Serializable {
             if (bannedRoutes.matches(route)) {
                 return true;
             }
+        }
+        
+        if (bannedRouteTypes != null) {
+        	Route route = trip.getRoute();
+        	
+        	for (Integer integer : bannedRouteTypes) {
+        		if (route.getType() == integer.intValue());
+        			return true;
+        	}
+        }
+        
+        if (bannedAgencyRouteTypes != null) {
+        	Route route = trip.getRoute();
+
+        	for (String agencyRouteType : bannedAgencyRouteTypes) {
+        		List<String>components = Arrays.asList(agencyRouteType.split("_"));
+        		
+        		String agencyID = components.get(0);
+        		Integer routeType = Integer.getInteger(components.get(1));
+        		
+        		if (agencyID.equals(route.getId().getAgencyId()) && routeType.intValue() == route.getType())
+        			return true;
+        	}
         }
 
         return false;
