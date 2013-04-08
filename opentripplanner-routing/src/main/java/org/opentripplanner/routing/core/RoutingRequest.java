@@ -935,14 +935,6 @@ public class RoutingRequest implements Cloneable, Serializable {
         }
         return builder.toString();
     }
-
-    private String getRouteSetStr(HashSet<RouteSpec> routes) {
-        HashSet<String> routesRepresentation = new HashSet<String>();
-        for (RouteSpec spec : routes) {
-        	routesRepresentation.add(spec.getRepresentation());
-        }
-        return getRouteOrAgencieStr(routesRepresentation);
-    }
     
     private String getRouteTypeStr(HashSet<Integer> routeTypes) {
         HashSet<String> routesRepresentation = new HashSet<String>();
@@ -990,34 +982,6 @@ public class RoutingRequest implements Cloneable, Serializable {
         if (bikeWalkingOptions != null && bikeWalkingOptions != this) {
             this.bikeWalkingOptions.setMaxWalkDistance(maxWalkDistance);
         }
-    }
-
-    public long preferencesPenaltyForTrip(Trip trip) {
-    	/* check if route is preferred for this plan */
-    	long preferences_penalty = 0;
-
-    	Route route = trip.getRoute();
-    	String agencyID = route.getId().getAgencyId();
-    	RouteSpec spec = new RouteSpec(agencyID, GtfsLibrary.getRouteName(route));
-    	
-    	if ((preferredRoutes != null && !preferredRoutes.isEmpty()) || (preferredAgencies != null && !preferredAgencies.isEmpty())) {
-    		boolean isPreferedRoute = preferredRoutes != null && preferredRoutes.contains(spec);
-    		boolean isPreferedAgency = preferredAgencies != null && preferredAgencies.contains(agencyID); 
-    		if (!isPreferedRoute && !isPreferedAgency) {
-    			preferences_penalty += useAnotherThanPreferredRoutesPenalty;
-    		}
-    		else {
-    			preferences_penalty = 0;
-    		}
-    	}
-
-    	boolean isUnpreferedRoute = unpreferredRoutes != null && unpreferredRoutes.contains(spec);
-    	boolean isUnpreferedAgency = unpreferredAgencies != null && unpreferredAgencies.contains(agencyID); 
-    	if (isUnpreferedRoute && isUnpreferedAgency) {
-    		preferences_penalty += useUnpreferredRoutesPenalty;
-    	}
-
-    	return preferences_penalty;
     }
 
     public void banTrip(AgencyAndId trip) {
