@@ -8,6 +8,7 @@ opentripplanner-integration/bin/
 opentripplanner-routing/bin/
 opentripplanner-utils/bin/
 opentripplanner-webapp/bin/
+Servers/
 target/
 dist/
 opentripplanner-admin-webapp/src/main/webapp/js/otp-min.js
