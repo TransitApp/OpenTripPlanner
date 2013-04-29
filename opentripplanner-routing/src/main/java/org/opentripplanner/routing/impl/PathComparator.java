@@ -27,14 +27,22 @@ public class PathComparator implements Comparator<GraphPath> {
     
     /**
      * For depart-after search results sort by arrival time ascending
-     * For arrive-before search resultes sort by departure time descending
+     * For arrive-before search results sort by departure time descending
      */
     @Override
     public int compare(GraphPath o1, GraphPath o2) {
+    	double o1Weight = o1.getWeight();
+    	double o2Weight = o2.getWeight();
+    	
+    	double time1 = (o1.getEndTime() - o1.states.getFirst().getContext().opt.dateTime);
+    	double time2 = (o2.getEndTime() - o2.states.getFirst().getContext().opt.dateTime);
+    	double o1TimeDiff = 2.0 * time1;
+    	double o2TimeDiff = 2.0 * time2;
+    	
         if (compareStartTimes) {
-            return (int) (o2.getWeight() - o1.getWeight());
+            return (int) (o2Weight * o2.getStartTime() - o1Weight * o1.getStartTime()) / 1000;
         } else {
-            return (int) (o1.getWeight() - o2.getWeight());
+            return (int) (o1Weight + o1TimeDiff - (o2Weight + o2TimeDiff)) / 1000;
         }
     }
 
