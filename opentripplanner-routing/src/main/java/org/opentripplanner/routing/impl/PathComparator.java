@@ -32,9 +32,9 @@ public class PathComparator implements Comparator<GraphPath> {
     @Override
     public int compare(GraphPath o1, GraphPath o2) {
         if (compareStartTimes) {
-            return (int) (o2.getStartTime() - o1.getStartTime());
+            return (int) (o2.getWeight() - o1.getWeight());
         } else {
-            return (int) (o1.getEndTime() - o2.getEndTime());
+            return (int) (o1.getWeight() - o2.getWeight());
         }
     }
 

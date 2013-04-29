@@ -18,20 +18,15 @@ import java.util.List;
 
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Trip;
-import org.opentripplanner.gtfs.GtfsLibrary;
 import org.opentripplanner.routing.core.RoutingContext;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Vertex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A shortest path on the graph.
  */
 public class GraphPath {
-    private static final Logger LOG = LoggerFactory.getLogger(GraphPath.class);
-
     public LinkedList<State> states;
 
     public LinkedList<Edge> edges;
