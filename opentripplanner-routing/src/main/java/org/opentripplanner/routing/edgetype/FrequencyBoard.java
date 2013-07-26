@@ -13,12 +13,15 @@
 
 package org.opentripplanner.routing.edgetype;
 
+import org.onebusaway.gtfs.model.Stop;
 import org.onebusaway.gtfs.model.Trip;
 import org.opentripplanner.routing.core.RoutingContext;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.ServiceDay;
 import org.opentripplanner.routing.core.State;
 import org.opentripplanner.routing.core.StateEditor;
+import org.opentripplanner.routing.core.StopTransfer;
+import org.opentripplanner.routing.core.TransferTable;
 import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.core.TraverseModeSet;
 import org.opentripplanner.routing.graph.Edge;
@@ -31,7 +34,7 @@ import com.vividsolutions.jts.geom.LineString;
 public class FrequencyBoard extends Edge implements OnBoardForwardEdge, PatternEdge {
     private static final long serialVersionUID = 7919511656529752927L;
 
-    private static final Logger _log = LoggerFactory.getLogger(FrequencyBoard.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FrequencyBoard.class);
             
     private int stopIndex;
     private FrequencyBasedTripPattern pattern;
@@ -93,22 +96,63 @@ public class FrequencyBoard extends Edge implements OnBoardForwardEdge, PatternE
                 return null;
             }
             s1.setTripId(null);
-            s1.setLastAlightedTime(state0.getTime());
+            s1.setLastAlightedTimeSeconds(state0.getTimeSeconds());
             s1.setBackMode(TraverseMode.BOARDING);
-            s1.setPreviousStop(fromv);
+            s1.setPreviousStop(((TransitVertex) fromv).getStop());
             return s1.makeState();
         } else {
             /* forward traversal: look for a transit trip on this pattern */
             if (!options.getModes().get(modeMask)) {
                 return null;
             }
+
+            /*
+             * Check transfer rules. This is possible here because the pattern always returns the
+             * same trip. 
+             */
+            
+            // Current time is used to find the next trip
+            long currentTime = state0.getTimeSeconds();
+            
+            int transferPenalty = 0;
+            if (state0.getNumBoardings() > 0) {
+                // This is not the first boarding, thus a transfer
+                TransferTable transferTable = options.getRoutingContext().transferTable;
+                // Get the current stop
+                Stop currentStop = ((TransitVertex) fromv).getStop();
+                // Get the transfer time
+                int transferTime = transferTable.getTransferTime(state0.getPreviousStop(),
+                        currentStop, state0.getPreviousTrip(), trip, true);
+                if (transferTime > 0) {
+                    // There is a minimum transfer time to make this transfer
+                    // Increase current time if necessary
+                    long tableBoardAfter = state0.getLastAlightedTimeSeconds() + transferTime;
+                    if (tableBoardAfter > currentTime) {
+                        currentTime = tableBoardAfter;
+                    }
+                } else if (transferTime == StopTransfer.FORBIDDEN_TRANSFER) {
+                    // This transfer is not allowed
+                    return null;
+                }
+                
+                // Determine transfer penalty
+                transferPenalty = transferTable.determineTransferPenalty(transferTime, options.nonpreferredTransferPenalty);
+                
+                // Check whether back edge is TimedTransferEdge
+                if (state0.getBackEdge() instanceof TimedTransferEdge) {
+                    // Transfer must be of type TIMED_TRANSFER
+                    if (transferTime != StopTransfer.TIMED_TRANSFER) {
+                        return null;
+                    }
+                }
+            }
+            
             /* find next boarding time */
             /*
              * check lists of transit serviceIds running yesterday, today, and tomorrow (relative to
              * initial state) if this pattern's serviceId is running look for the next boarding time
              * choose the soonest boarding time among trips starting yesterday, today, or tomorrow
              */
-            long currentTime = state0.getTime();
             int bestWait = -1;
             TraverseMode mode = state0.getNonTransitMode();
             if (options.bannedTrips.containsKey(trip.getId())) {
@@ -127,9 +171,9 @@ public class FrequencyBoard extends Edge implements OnBoardForwardEdge, PatternE
                     if (startTime >= 0) {
                         // a trip was found, wait will be non-negative
                         
-                        int wait = (int) (sd.time(startTime) - currentTime);
+                        int wait = (int) (sd.time(startTime) - state0.getTimeSeconds());
                         if (wait < 0)
-                            _log.error("negative wait time on board");
+                            LOG.error("negative wait time on board");
                         if (bestWait < 0 || wait < bestWait) {
                             // track the soonest departure over all relevant schedules
                             bestWait = wait;
@@ -157,6 +201,7 @@ public class FrequencyBoard extends Edge implements OnBoardForwardEdge, PatternE
             s1.incrementTimeInSeconds(bestWait);
             s1.incrementNumBoardings();
             s1.setTripId(trip.getId());
+            s1.setPreviousTrip(trip);
             s1.setZone(pattern.getZone(stopIndex));
             s1.setRoute(trip.getRoute().getId());
             s1.setBackMode(TraverseMode.BOARDING);
@@ -168,6 +213,7 @@ public class FrequencyBoard extends Edge implements OnBoardForwardEdge, PatternE
                 wait_cost *= options.waitReluctance;
             }
             s1.incrementWeight(preferences_penalty);
+            s1.incrementWeight(transferPenalty);
             s1.incrementWeight(wait_cost + options.getBoardCost(mode));
             return s1.makeState();
         }

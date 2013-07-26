@@ -23,8 +23,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javax.annotation.PostConstruct;
-
 import org.opentripplanner.routing.bike_rental.BikeRentalStation;
 import org.opentripplanner.routing.bike_rental.BikeRentalStationService;
 import org.opentripplanner.routing.edgetype.RentABikeOffEdge;
@@ -40,7 +38,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class BikeRentalUpdater implements Runnable {
-    private static final Logger _log = LoggerFactory.getLogger(BikeRentalUpdater.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BikeRentalUpdater.class);
 
     Map<BikeRentalStation, BikeRentalStationVertex> verticesByStation = new HashMap<BikeRentalStation, BikeRentalStationVertex>();
 
@@ -57,6 +55,8 @@ public class BikeRentalUpdater implements Runnable {
     private GraphService graphService;
 
     private String network = "default";
+    
+    private boolean setup = false;
 
     public void setRouterId(String routerId) {
         this.routerId = routerId;
@@ -76,19 +76,28 @@ public class BikeRentalUpdater implements Runnable {
         this.graphService = graphService;
     }
 
-    @PostConstruct
-    public void setup() {
-        if (routerId != null) {
-            graph = graphService.getGraph(routerId);
-        } else {
-            graph = graphService.getGraph();
+    public boolean setup() {
+        graph = graphService.getGraph(routerId); // Handle null routerId.
+        if (graph == null && setup) {
+            // We temporary disable the updater: no graph ready (yet).
+            LOG.error("Can't get graph for router ID {}, disabling updater.", routerId);
+            networkLinkerLibrary = null;
+            service = null;
+            setup = false;
         }
-        networkLinkerLibrary = new NetworkLinkerLibrary(graph, Collections.<Class<?>, Object> emptyMap());
-        service = graph.getService(BikeRentalStationService.class);
-        if (service == null) {
-            service = new BikeRentalStationService();
-            graph.putService(BikeRentalStationService.class, service);
+        if (graph != null && !setup) {
+            // A graph is available, setting up.
+            LOG.info("Setting up updater for router ID {}.", routerId);
+            networkLinkerLibrary = new NetworkLinkerLibrary(graph,
+                    Collections.<Class<?>, Object> emptyMap());
+            service = graph.getService(BikeRentalStationService.class);
+            if (service == null) {
+                service = new BikeRentalStationService();
+                graph.putService(BikeRentalStationService.class, service);
+            }
+            setup = true;
         }
+        return setup;
     }
 
     public List<BikeRentalStation> getStations() {
@@ -97,9 +106,13 @@ public class BikeRentalUpdater implements Runnable {
 
     @Override
     public void run() {
-        _log.debug("Updating bike rental stations from " + source);
+        if (!setup()) {
+            // Updater has been disabled (no graph available).
+            return;
+        }
+        LOG.debug("Updating bike rental stations from " + source);
         if (!source.update()) {
-            _log.debug("No updates");
+            LOG.debug("No updates");
             return;
         }
         List<BikeRentalStation> stations = source.getStations();

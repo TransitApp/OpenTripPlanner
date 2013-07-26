@@ -40,6 +40,11 @@ public class GenericLocation implements Cloneable {
      * The identifier of the place, if provided. May be a lat,lng string or a vertex ID.
      */
     private final String place;
+    
+    /**
+     * The ID of the edge this location is on if any.
+     */
+    private Integer edgeId;
 
     /**
      * Coordinates of the place, if provided.
@@ -59,12 +64,20 @@ public class GenericLocation implements Cloneable {
      */
     private Double heading;
 
-    // Pattern for parsing lat,lng strings.
+    // Pattern for matching lat,lng strings, i.e. an optional '-' character followed by 
+    // one or more digits, and an optional (decimal point followed by one or more digits).
     private static final String _doublePattern = "-{0,1}\\d+(\\.\\d+){0,1}";
 
-    private static final Pattern _latLonPattern = Pattern.compile("^\\s*(" + _doublePattern
-            + ")(\\s*,\\s*|\\s+)(" + _doublePattern + ")\\s*$");
+    // We want to ignore any number of non-digit characters at the beginning of the string, except
+    // that signs are also non-digits. So ignore any number of non-(digit or sign or decimal point). 
+    private static final Pattern _latLonPattern = Pattern.compile("[^[\\d&&[-|+|.]]]*(" + _doublePattern
+            + ")(\\s*,\\s*|\\s+)(" + _doublePattern + ")\\D*");
+    
+    private static final Pattern _headingPattern = Pattern.compile("\\D*heading=("
+            + _doublePattern + ")\\D*");
 
+    private static final Pattern _edgeIdPattern = Pattern.compile("\\D*edgeId=(\\d+)\\D*");
+    
     /**
      * Constructs an empty GenericLocation.
      */
@@ -103,11 +116,12 @@ public class GenericLocation implements Cloneable {
     
     /**
      * Construct from a name, place pair.
-     * 
-     * Parses latitude, longitude data from the place string.
-     * 
-     * @param name
-     * @param place
+     * Parses latitude, longitude data, heading and numeric edge ID out of the place string.
+     * Note that if the place string does not appear to contain a lat/lon pair, heading, or edge ID
+     * the GenericLocation will be missing that information but will still retain the place string,
+     * which will be interpreted during routing context construction as a vertex label within the 
+     * graph for the appropriate routerId (by StreetVertexIndexServiceImpl.getVertexForLocation()).
+     * TODO: Perhaps the interpretation as a vertex label should be done here for clarity.
      */
     public GenericLocation(String name, String place) {
         this.name = name;
@@ -118,9 +132,19 @@ public class GenericLocation implements Cloneable {
         }
         
         Matcher matcher = _latLonPattern.matcher(place);
-        if (matcher.matches()) {
+        if (matcher.find()) {
             this.lat = Double.parseDouble(matcher.group(1));
             this.lng = Double.parseDouble(matcher.group(4));
+        }
+        
+        matcher = _headingPattern.matcher(place);
+        if (matcher.find()) {
+            this.heading = Double.parseDouble(matcher.group(1));
+        }
+        
+        matcher = _edgeIdPattern.matcher(place);
+        if (matcher.find()) {
+            this.edgeId = Integer.parseInt(matcher.group(1));
         }
     }
 
@@ -176,6 +200,14 @@ public class GenericLocation implements Cloneable {
         return this.lat != null && this.lng != null;
     }
     
+    /**
+     * Returns true if getEdgeId would not return null.
+     * @return
+     */
+    public boolean hasEdgeId() {
+        return this.edgeId != null;
+    }
+    
     public NamedPlace getNamedPlace() {
         return new NamedPlace(this.name, this.place);
     }
@@ -218,6 +250,9 @@ public class GenericLocation implements Cloneable {
         sb.append("<GenericLocation lat,lng=").append(this.lat).append(",").append(this.lng);
         if (this.hasHeading()) {
             sb.append(" heading=").append(this.heading);
+        }
+        if (this.hasEdgeId()) {
+            sb.append(" edgeId=").append(this.edgeId);
         }
         sb.append(">");
         return sb.toString();

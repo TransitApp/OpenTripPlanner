@@ -58,6 +58,11 @@ public class GraphPath {
         this.rctx = s.getContext();
         this.back = s.getOptions().isArriveBy();
         
+        if (s.getOptions().getStartingTransitTripId() != null) {
+            LOG.debug("Disable reverse-optimize for on-board depart");
+            optimize = false;
+        }
+        
         /* Put path in chronological order, and optimize as necessary */
         State lastState;
         walkDistance = s.getWalkDistance();
@@ -78,9 +83,13 @@ public class GraphPath {
         this.edges = new LinkedList<Edge>();
         for (State cur = lastState; cur != null; cur = cur.getBackState()) {
             states.addFirst(cur);
-            if (cur.getBackEdge() != null)
+            
+            // Record the edge if it exists and this is not the first state in the path.
+            if (cur.getBackEdge() != null && cur.getBackState() != null) {
                 edges.addFirst(cur.getBackEdge());
+            }
         }
+        //dump();
     }
 
     /**
@@ -88,7 +97,7 @@ public class GraphPath {
      * @return
      */
     public long getStartTime() {
-        return states.getFirst().getTime();
+        return states.getFirst().getTimeSeconds();
     }
 
     /**
@@ -96,7 +105,7 @@ public class GraphPath {
      * @return
      */
     public long getEndTime() {
-        return states.getLast().getTime();
+        return states.getLast().getTimeSeconds();
     }
 
     /**
@@ -105,7 +114,7 @@ public class GraphPath {
      */
     public int getDuration() {
         // test to see if it is the same as getStartTime - getEndTime;
-        return (int) states.getLast().getElapsedTime();
+        return (int) states.getLast().getElapsedTimeSeconds();
     }
 
     public double getWeight() {
@@ -120,19 +129,19 @@ public class GraphPath {
         return states.getLast().getVertex();
     }
 
-    /**
-     * Get a list containing one AgencyAndId (trip id) for each vehicle boarded in this path.
-     * 
-     * @return a list of the ids of trips used by this path
-     */
+    /** @return A list containing one AgencyAndId (trip_id) for each vehicle boarded in this path,
+     * in the chronological order they are boarded. */
     public List<AgencyAndId> getTrips() {
         List<AgencyAndId> ret = new LinkedList<AgencyAndId>();
+        Trip lastTrip = null;
         for (State s : states) {
-            Edge e = s.getBackEdge();
-            if (e == null) continue;
-            Trip trip = s.getBackTrip();
-            if (trip != null)
-                ret.add(trip.getId());
+            if (s.getBackEdge() != null) {
+                Trip trip = s.getBackTrip();
+                if (trip != null && trip != lastTrip) {
+                    ret.add(trip.getId());
+                    lastTrip = trip;
+                }
+            }
         }
         return ret;
     }
@@ -167,6 +176,8 @@ public class GraphPath {
         for (State s : states)
             System.out.println(s + " via " + s.getBackEdge());
         System.out.println(" --- END GRAPHPATH DUMP ---");
+        System.out.println("Total meters walked in this graphpath: " + 
+               states.getLast().getWalkDistance());
     }
 
     public void dumpPathParser() {

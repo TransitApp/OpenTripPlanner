@@ -71,7 +71,7 @@ import com.vividsolutions.jts.geom.LineString;
  */
 @XmlRootElement(name = "RouteVariant")
 public class RouteVariant implements Serializable {
-    private static final Logger _log = LoggerFactory.getLogger(RouteVariant.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RouteVariant.class);
 
     private static final long serialVersionUID = -3110443015998033630L;
 
@@ -164,7 +164,7 @@ public class RouteVariant implements Serializable {
             segment = successors.get(segment.hopOut);
         }
         if (i != exemplarSegments.size()) {
-            _log.error("Failed to organize hops in route variant " + name);
+            LOG.error("Failed to organize hops in route variant " + name);
         }
     }
 
@@ -242,6 +242,19 @@ public class RouteVariant implements Serializable {
 
         }
         return geometry;
+    }
+    
+    /**
+     * @param index The index of the segment in the list
+     * @return The partial geometry between this segment's stop and the next one.
+     */
+    public LineString getGeometrySegment(int index) {
+        RouteSegment segment = exemplarSegments.get(index);
+        if (segment.hopOut != null) {
+            return GeometryUtils.getGeometryFactory().createLineString(
+                    segment.getGeometry().getCoordinates());
+        }
+        return null;
     }
 
     @JsonIgnore

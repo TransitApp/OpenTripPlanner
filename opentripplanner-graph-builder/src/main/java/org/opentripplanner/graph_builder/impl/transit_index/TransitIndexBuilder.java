@@ -13,6 +13,8 @@
 
 package org.opentripplanner.graph_builder.impl.transit_index;
 
+import static org.opentripplanner.common.IterableLibrary.filter;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,13 +39,13 @@ import org.opentripplanner.common.geometry.SphericalDistanceLibrary;
 import org.opentripplanner.graph_builder.services.GraphBuilderWithGtfsDao;
 import org.opentripplanner.gtfs.GtfsLibrary;
 import org.opentripplanner.routing.core.TraverseMode;
-import org.opentripplanner.routing.edgetype.PatternInterlineDwell;
-import org.opentripplanner.routing.edgetype.TransitBoardAlight;
 import org.opentripplanner.routing.edgetype.PatternDwell;
 import org.opentripplanner.routing.edgetype.PatternHop;
+import org.opentripplanner.routing.edgetype.PatternInterlineDwell;
 import org.opentripplanner.routing.edgetype.PreAlightEdge;
 import org.opentripplanner.routing.edgetype.PreBoardEdge;
 import org.opentripplanner.routing.edgetype.TableTripPattern;
+import org.opentripplanner.routing.edgetype.TransitBoardAlight;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.services.TransitIndexService;
@@ -51,6 +53,7 @@ import org.opentripplanner.routing.transit_index.RouteSegment;
 import org.opentripplanner.routing.transit_index.RouteVariant;
 import org.opentripplanner.routing.transit_index.TransitIndexServiceImpl;
 import org.opentripplanner.routing.vertextype.TransitStop;
+import org.opentripplanner.routing.vertextype.TransitStopDepart;
 import org.opentripplanner.routing.vertextype.TransitVertex;
 import org.opentripplanner.util.MapUtils;
 import org.slf4j.Logger;
@@ -65,7 +68,7 @@ import com.vividsolutions.jts.geom.Coordinate;
  * 
  */
 public class TransitIndexBuilder implements GraphBuilderWithGtfsDao {
-    private static final Logger _log = LoggerFactory.getLogger(TransitIndexBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TransitIndexBuilder.class);
 
     private GtfsRelationalDao dao;
 
@@ -76,6 +79,8 @@ public class TransitIndexBuilder implements GraphBuilderWithGtfsDao {
     private HashMap<String, List<RouteVariant>> variantsByAgency = new HashMap<String, List<RouteVariant>>();
 
     private HashMap<AgencyAndId, PreAlightEdge> preAlightEdges = new HashMap<AgencyAndId, PreAlightEdge>();
+    
+    private HashMap<AgencyAndId, TableTripPattern> tableTripPatternsByTrip = new HashMap<AgencyAndId, TableTripPattern>();
 
     private HashMap<AgencyAndId, PreBoardEdge> preBoardEdges = new HashMap<AgencyAndId, PreBoardEdge>();
 
@@ -96,9 +101,10 @@ public class TransitIndexBuilder implements GraphBuilderWithGtfsDao {
 
     @Override
     public void buildGraph(Graph graph) {
-        _log.debug("Building transit index");
+        LOG.debug("Building transit index");
 
         createRouteVariants(graph);
+        indexTableTripPatternByTrip(graph);
 
         nameVariants(variantsByRoute);
         int totalVariants = 0;
@@ -110,7 +116,7 @@ public class TransitIndexBuilder implements GraphBuilderWithGtfsDao {
                 totalTrips += variant.getTrips().size();
             }
         }
-        _log.debug("Built transit index: " + variantsByAgency.size() + " agencies, "
+        LOG.debug("Built transit index: " + variantsByAgency.size() + " agencies, "
                 + variantsByRoute.size() + " routes, " + totalTrips + " trips, " + totalVariants
                 + " variants ");
 
@@ -118,11 +124,11 @@ public class TransitIndexBuilder implements GraphBuilderWithGtfsDao {
                 .getService(TransitIndexService.class);
         if (service == null) {
             service = new TransitIndexServiceImpl(variantsByAgency, variantsByRoute,
-                    variantsByTrip, preBoardEdges, preAlightEdges, directionsByRoute, stopsByRoute,
-                    modes);
+                    variantsByTrip, preBoardEdges, preAlightEdges, tableTripPatternsByTrip,
+                    directionsByRoute, stopsByRoute, modes);
         } else {
             service.merge(variantsByAgency, variantsByRoute, variantsByTrip, preBoardEdges,
-                    preAlightEdges, directionsByRoute, stopsByRoute, modes);
+                    preAlightEdges, tableTripPatternsByTrip, directionsByRoute, stopsByRoute, modes);
         }
 
         insertCalendarData(service);
@@ -207,7 +213,7 @@ public class TransitIndexBuilder implements GraphBuilderWithGtfsDao {
      * Find the "transit center" of the graph using a weighted k-means technique
      */
     private Coordinate findTransitCenter() {
-        _log.debug("Finding transit center via k-means");
+        LOG.debug("Finding transit center via k-means");
         final int N = 30;// number of clusters
         final int ITERATIONS = 50;
         Map<Stop, Integer> stopWeight = new HashMap<Stop, Integer>();
@@ -306,7 +312,7 @@ public class TransitIndexBuilder implements GraphBuilderWithGtfsDao {
             }
 
         }
-        _log.debug("found transit center");
+        LOG.debug("found transit center");
 
         // the highest-weighted cluster
         return Collections.max(Arrays.asList(centers)).coord;
@@ -425,6 +431,19 @@ public class TransitIndexBuilder implements GraphBuilderWithGtfsDao {
                         variant.addExemplarSegment(segment);
                     }
                     variant.addSegment(segment);
+                }
+            }
+        }
+    }
+    
+    private void indexTableTripPatternByTrip(Graph graph) {
+        for (TransitStopDepart tsd : filter(graph.getVertices(), TransitStopDepart.class)) {
+            for (TransitBoardAlight tba : filter(tsd.getOutgoing(), TransitBoardAlight.class)) {
+                if (!tba.isBoarding())
+                    continue;
+                TableTripPattern pattern = tba.getPattern();
+                for (Trip trip : pattern.getTrips()) {
+                    tableTripPatternsByTrip.put(trip.getId(), pattern);
                 }
             }
         }

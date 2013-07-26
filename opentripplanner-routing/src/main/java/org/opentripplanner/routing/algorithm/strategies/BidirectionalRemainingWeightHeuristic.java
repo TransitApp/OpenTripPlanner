@@ -67,9 +67,8 @@ public class BidirectionalRemainingWeightHeuristic implements RemainingWeightHeu
     }
 
     @Override
-    public double computeInitialWeight(State s, Vertex target) {
+    public void initialize(State s, Vertex target) {
         recalculate(s.getVertex(), target, s.getOptions(), false);
-        return computeForwardWeight(s, target);
     }
 
     @Override
@@ -103,7 +102,7 @@ public class BidirectionalRemainingWeightHeuristic implements RemainingWeightHeu
                     if (d > s.getOptions().getMaxWalkDistance() - s.getWalkDistance()) {
                         return Double.MAX_VALUE;
                     }
-                    double walk = d / s.getOptions().getSpeedUpperBound();
+                    double walk = d / s.getOptions().getStreetSpeedUpperBound();
                     return Math.max(h, walk);
                 }
             }
@@ -188,10 +187,6 @@ public class BidirectionalRemainingWeightHeuristic implements RemainingWeightHeu
         }
     }
 
-    @Override
-    public void reset() {
-    }
-
     /**
      * RemainingTimeHeuristic interface
      */
@@ -217,5 +212,11 @@ public class BidirectionalRemainingWeightHeuristic implements RemainingWeightHeu
             }   
         }
     }
+
+    @Override
+    public void reset() {}
+    
+    @Override
+    public void abort() {}
 
 }

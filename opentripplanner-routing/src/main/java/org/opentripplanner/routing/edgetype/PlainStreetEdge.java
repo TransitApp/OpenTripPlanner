@@ -70,6 +70,9 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
     private String name;
 
     @Getter @Setter
+    private String label;
+    
+    @Getter @Setter
     private boolean wheelchairAccessible = true;
 
     @Getter @Setter
@@ -82,11 +85,12 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
      * Marks that this edge is the reverse of the one defined in the source
      * data. Does NOT mean fromv/tov are reversed.
      */
+    @Getter @Setter
     public boolean back;
     
     @Getter @Setter
     private boolean roundabout = false;
-
+    
     @Getter
     private Set<Alert> notes;
 
@@ -165,9 +169,9 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
                     }
                 }
                 double angleR = DirectionUtils.getLastAngle(geometry);
-                outAngle = ((int) (180 * angleR / Math.PI) + 180 + 360) % 360;
+                outAngle = ((int) Math.toDegrees(angleR) + 180) % 360;
                 angleR = DirectionUtils.getFirstAngle(geometry);
-                inAngle = ((int) (180 * angleR / Math.PI) + 180 + 360) % 360;
+                inAngle = ((int) Math.toDegrees(angleR) + 180) % 360;
             } catch (IllegalArgumentException iae) {
                 LOG.error("exception while determining street edge angles. setting to zero. there is probably something wrong with this street segment's geometry.");
                 inAngle = 0;
@@ -234,15 +238,25 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
     }
 
     private State doTraverse(State s0, RoutingRequest options, TraverseMode traverseMode) {
+        boolean walkingBike = options.isWalkingBike();
+        boolean backWalkingBike = s0.isBackWalkingBike();
+        TraverseMode backMode = s0.getBackMode();
         Edge backEdge = s0.getBackEdge();
-        if (backEdge != null
-                && (options.arriveBy ? (backEdge.getToVertex() == fromv)
-                        : (backEdge.getFromVertex() == tov))) {
-            // no illegal U-turns
-            // NOTE(flamholz): unclear how this handles legal U-turns. e.g. when 
-            // you need to pull a U to turn left at the previous intersection.
-            return null;
+        if (backEdge != null) {
+            // No illegal U-turns.
+            // NOTE(flamholz): we check both directions because both edges get a chance to decide
+            // if they are the reverse of the other. Also, because it doesn't matter which direction
+            // we are searching in - these traversals are always disallowed (they are U-turns in one direction
+            // or the other).
+            if (this.isReverseOf(backEdge) || backEdge.isReverseOf(this)) {
+                return null;
+            }
         }
+
+        // Ensure we are actually walking, when walking a bike
+        backWalkingBike &= TraverseMode.WALK.equals(backMode);
+        walkingBike &= TraverseMode.WALK.equals(traverseMode);
+
         if (!canTraverse(options, traverseMode)) {
             if (traverseMode == TraverseMode.BICYCLE) {
                 // try walking bike since you can't ride here
@@ -293,7 +307,7 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
                 weight = length / speed;
             }
         } else {
-            if (options.isWalkingBike()) {
+            if (walkingBike) {
                 // take slopes into account when walking bikes
                 time = elevationProfileSegment.getSlopeSpeedEffectiveLength() / speed;
             }
@@ -303,7 +317,8 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
                 double costs = ElevationUtils.getWalkCostsForSlope(length, elevationProfileSegment.getMaxSlope());
                 // as the cost walkspeed is assumed to be for 4.8km/h (= 1.333 m/sec) we need to adjust
                 // for the walkspeed set by the user
-                weight = costs * ( 1.3333 / speed );
+                double elevationUtilsSpeed = 4.0 / 3.0;
+                weight = costs * (elevationUtilsSpeed / speed);
                 time = weight; //treat cost as time, as in the current model it actually is the same (this can be checked for maxSlope == 0)
                 /*
                 // debug code
@@ -322,6 +337,7 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
         
         StateEditor s1 = s0.edit(this);
         s1.setBackMode(traverseMode);
+        s1.setBackWalkingBike(walkingBike);
 
         if (wheelchairNotes != null && options.wheelchairAccessible) {
             s1.addAlerts(wheelchairNotes);
@@ -330,8 +346,9 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
         PlainStreetEdge backPSE;
         if (backEdge != null && backEdge instanceof PlainStreetEdge) {
             backPSE = (PlainStreetEdge) backEdge;
-            double backSpeed = backPSE.calculateSpeed(options, traverseMode);
-            final double realTurnCost;
+            RoutingRequest backOptions = backWalkingBike ? options.bikeWalkingOptions : options;
+            double backSpeed = backPSE.calculateSpeed(backOptions, backMode);
+            final double realTurnCost;  // Units are seconds.
             
             /* Compute turn cost.
              * 
@@ -346,12 +363,12 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
              * the backEdge, rather than of the current edge.
              */
             if (options.arriveBy && tov instanceof IntersectionVertex) { // arrive-by search
-                if (!canTurnOnto(backPSE, s0, traverseMode)) {
+                if (!canTurnOnto(backPSE, s0, backMode)) {
                     return null;
                 }
                 IntersectionVertex traversedVertex = ((IntersectionVertex) tov);
-                realTurnCost = options.getIntersectionTraversalCostModel().computeTraversalCost(
-                        traversedVertex, this, backPSE, traverseMode, options, (float) speed,
+                realTurnCost = backOptions.getIntersectionTraversalCostModel().computeTraversalCost(
+                        traversedVertex, this, backPSE, backMode, backOptions, (float) speed,
                         (float) backSpeed);
             } else if (fromv instanceof IntersectionVertex) { // depart-after search
                 if (!backPSE.canTurnOnto(this, s0, traverseMode)) {
@@ -361,12 +378,14 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
                 realTurnCost = options.getIntersectionTraversalCostModel().computeTraversalCost(
                         traversedVertex, backPSE, this, traverseMode, options, (float) backSpeed,
                         (float) speed);                
-            } else { // in case this is a temporary edge not connected to an IntersectionVertex
+            } else {
+                // In case this is a temporary edge not connected to an IntersectionVertex
+                LOG.debug("Not computing turn cost for edge {}", this);
                 realTurnCost = 0; 
             }
 
             if (!traverseMode.isDriving()) {
-                s1.incrementWalkDistance(realTurnCost / 100);  //just a tie-breaker
+                s1.incrementWalkDistance(realTurnCost / 100);  // just a tie-breaker
             }
 
             long turnTime = (long) Math.ceil(realTurnCost);
@@ -399,9 +418,6 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
     /**
      * Calculate the average automobile traversal speed of this segment, given
      * the RoutingRequest, and return it in meters per second.
-     * 
-     * @param options
-     * @return
      */
     private double calculateCarSpeed(RoutingRequest options) {
         return carSpeed;
@@ -409,13 +425,11 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
     
     /**
      * Calculate the speed appropriately given the RoutingRequest and traverseMode.
-     * 
-     * @param options
-     * @param traverseMode
-     * @return
      */
     private double calculateSpeed(RoutingRequest options, TraverseMode traverseMode) {
-        if (traverseMode == TraverseMode.CAR) {
+        if (traverseMode == null) {
+            return Double.NaN;
+        } else if (traverseMode.isDriving()) {
             // NOTE: Automobiles have variable speeds depending on the edge type
             return calculateCarSpeed(options);
         }
@@ -429,7 +443,7 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
 
     @Override
     public double timeLowerBound(RoutingRequest options) {
-        return this.length / options.getSpeedUpperBound();
+        return this.length / options.getStreetSpeedUpperBound();
     }
 
     public void setSlopeSpeedEffectiveLength(double slopeSpeedEffectiveLength) {
@@ -475,13 +489,16 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
     
     @Override
     public String toString() {
-        return "PlainStreetEdge(" + getId() + ", " + name + ", " + fromv + " -> " + tov + ")";
+        return "PlainStreetEdge(" + getId() + ", " + name + ", " + fromv + " -> " + tov
+                + " length=" + this.getLength() + " carSpeed=" + this.getCarSpeed()
+                + " permission=" + this.getPermission() + ")";
     }
 
     public boolean hasBogusName() {
         return hasBogusName;
     }
-    
+
+    /** Returns true if there are any turn restrictions defined. */
     public boolean hasExplicitTurnRestrictions() {
         return this.turnRestrictions != null && this.turnRestrictions.size() > 0;
     }
@@ -505,20 +522,22 @@ public class PlainStreetEdge extends StreetEdge implements Cloneable {
             throw new RuntimeException(e);
         }
     }
-
+    
     public boolean canTurnOnto(Edge e, State state, TraverseMode mode) {
         for (TurnRestriction restriction : turnRestrictions) {
             /* FIXME: This is wrong for trips that end in the middle of restriction.to
              */
 
+            // NOTE(flamholz): edge to be traversed decides equivalence. This is important since 
+            // it might be a temporary edge that is equivalent to some graph edge.
             if (restriction.type == TurnRestrictionType.ONLY_TURN) {
-                if (restriction.to != e && restriction.modes.contains(mode) &&
-                        restriction.active(state.getTime())) {
+                if (!e.isEquivalentTo(restriction.to) && restriction.modes.contains(mode) &&
+                        restriction.active(state.getTimeSeconds())) {
                     return false;
                 }
             } else {
-                if (restriction.to == e && restriction.modes.contains(mode) &&
-                        restriction.active(state.getTime())) {
+                if (e.isEquivalentTo(restriction.to) && restriction.modes.contains(mode) &&
+                        restriction.active(state.getTimeSeconds())) {
                     return false;
                 }
             }
