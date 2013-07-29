@@ -1,6 +1,7 @@
 package controllers;
 
-import play.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import play.mvc.*;
 
 import java.util.*;
@@ -9,42 +10,79 @@ import models.*;
 
 public class Application extends Controller {
 
+    private static SecureRandom random = new SecureRandom();
+  
     @Before
     public static void setCORS()  {
-        Http.Header hd = new Http.Header();
-        hd.name = "Access-Control-Allow-Origin";
-        hd.values = new ArrayList<String>();
-        hd.values.add("*");
-        Http.Response.current().headers.put("Access-Control-Allow-Origin",hd);      
-    }
+        Http.Header origin = new Http.Header();
+        origin.name = "Access-Control-Allow-Origin";
+        origin.values = new ArrayList<String>();
+        origin.values.add("*");
+        Http.Response.current().headers.put("Access-Control-Allow-Origin",origin);      
         
-    public static void index() {
-        List<OTPQuery> queries = OTPQuery.all().fetch(10);
-        render(queries);
+        Http.Header headers = new Http.Header();
+        headers.name = "Access-Control-Allow-Headers";
+        headers.values = new ArrayList<String>();
+        headers.values.add("Origin, X-Requested-With, Content-Type, Accept");
+                
+        //headers.values.add("Origin");
+        //headers.values.add("X-Requested-With");
+        //headers.values.add("Accept");
+       
+        Http.Response.current().headers.put("Access-Control-Allow-Headers",headers);      
+
     }
     
-    public static void getQueries(String userName, Integer limit) {
-        List<OTPQuery> queries;
-        if(limit == null)
-            queries = OTPQuery.find("userName", userName).fetch();
-        else {
-            queries = OTPQuery.find("userName = '"+userName+"' order by timeStamp desc").fetch(limit);
-            System.out.println("fetched w/ limit = "+limit);
+    
+    // called internally by CallTaker/FieldTrip controller
+    public static TrinetUser checkLogin() {
+        String sessionId = params.get("sessionId");
+        
+        Session userSession = Session.find("bySessionId", sessionId).first();
+        if(userSession == null) {
+            forbidden();
         }
-        renderJSON(queries);
+        System.out.println("retrieved session for user: "+userSession.user);
+        return userSession.user;
     }
     
-    public static void newQuery(String userName, String queryParams, String fromPlace, String toPlace) {
-        OTPQuery query = new OTPQuery(userName, queryParams, fromPlace, toPlace);
-        query.save();
-        Long id = query.id;
-        render(userName, id);
+    public static void newSession() {
+        Map<String, String> resp = new HashMap<String, String>();
+        resp.put("sessionId", nextSessionId());
+        renderJSON(resp);
     }
 
-    public static void deleteQuery(Long id) {
-        OTPQuery query = OTPQuery.findById(id);  
-        query.delete();
-        render(id);
-    }  
-   
+    public static void checkSession(String sessionId) {
+        System.out.println("checkSession: "+sessionId);
+        Session userSession = Session.find("bySessionId", sessionId).first();
+        System.out.println("found session: "+userSession);
+
+        Map<String, String> resp = new HashMap<String, String>();
+        resp.put("sessionId", sessionId);
+        if(userSession != null) {
+            resp.put("username", userSession.user.username);            
+        }
+        renderJSON(resp);
+    }
+    
+    public static void verifyLogin(String session, String redirect) {
+
+        System.out.println("\n** verifyLogin ** " + redirect +  " \n");
+        System.out.println("headers: "+ request.headers);
+        
+        String username = request.headers.get("x-remote-user").value();
+        TrinetUser user = TrinetUser.find("byUsername", username).first();
+        Session userSession = new Session(session, user);
+        userSession.save();
+        System.out.println("initialized session " + session + " for user "+username);
+        
+        String redirectUrl = redirect + "?sessionId=" + session;
+        System.out.println("redirecting to: " + redirectUrl);
+        redirect(redirectUrl);
+    }
+        
+    public static String nextSessionId() {
+        return new BigInteger(130, random).toString(32);
+    }
+    
 }

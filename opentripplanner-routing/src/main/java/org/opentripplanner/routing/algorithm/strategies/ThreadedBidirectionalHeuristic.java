@@ -63,7 +63,7 @@ public class ThreadedBidirectionalHeuristic implements RemainingWeightHeuristic 
     }
 
     @Override
-    public double computeInitialWeight(State s, Vertex target) {
+    public void initialize(State s, Vertex target) {
         if (target == this.target) {
             LOG.debug("reusing existing heuristic");
         } else {
@@ -72,13 +72,6 @@ public class ThreadedBidirectionalHeuristic implements RemainingWeightHeuristic 
             //singlethreaded debug
             //new Worker(s).run();
         }
-        // Maybe the computeInitialWeight interface method should just be replaced with heuristic 
-        // setup and teardown methods, since the initial weight is really not important (can be
-        // 0 with no problem). Perhaps directionality should also be defined during the setup,
-        // instead of having two separate methods for the two directions.
-        // We might not even need a setup method if the routing options are just passed into the
-        // constructor.
-        return 0;
     }
 
     @Override
@@ -150,6 +143,10 @@ public class ThreadedBidirectionalHeuristic implements RemainingWeightHeuristic 
             for (State stopState : streetSearch(options, true)) { // backward street search
                 q.insert(stopState.getVertex(), stopState.getWeight());
             }
+            // once street searches are done, raise the walk limit to max
+            // because hard walk limiting is incorrect and is observed to cause problems 
+            // for trips near the cutoff
+            options.setMaxWalkDistance(Double.MAX_VALUE);
         }
         
         @Override
@@ -244,8 +241,6 @@ public class ThreadedBidirectionalHeuristic implements RemainingWeightHeuristic 
     private List<State> streetSearch (RoutingRequest rr, boolean fromTarget) {
 //        final double RADIUS = 5000;
         rr = rr.clone();
-        // it is not clear why this should be set higher than the value specified in the incoming request
-        rr.setMaxWalkDistance(5000);
         if (fromTarget)
             rr.setArriveBy( ! rr.isArriveBy());
         List<State> stopStates = Lists.newArrayList();

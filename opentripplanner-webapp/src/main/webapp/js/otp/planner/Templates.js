@@ -31,6 +31,8 @@ otp.planner.ParamTemplate = 'submit'
         + '&wheelchair={wheelchair}'
         + '&preferredRoutes={preferredRoutes}'
         + '&unpreferredRoutes={unpreferredRoutes}'
+        + '&bannedRoutes={bannedRoutes}'
+        + '&bannedStops={bannedStops}'
 ;
 
 otp.planner.Templates = {

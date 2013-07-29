@@ -24,20 +24,18 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Stop;
 import org.onebusaway.gtfs.model.Trip;
 import org.opentripplanner.common.geometry.GeometryUtils;
 import org.opentripplanner.gtfs.GtfsLibrary;
 import org.opentripplanner.model.json_serialization.EncodedPolylineJSONSerializer;
-import org.opentripplanner.model.json_serialization.GeoJSONSerializer;
 import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.edgetype.PatternInterlineDwell;
 import org.opentripplanner.routing.graph.Edge;
-import org.opentripplanner.routing.transit_index.adapters.AgencyAndIdAdapter;
 import org.opentripplanner.routing.transit_index.adapters.LineStringAdapter;
 import org.opentripplanner.routing.transit_index.adapters.StopAgencyAndIdAdapter;
+import org.opentripplanner.routing.transit_index.adapters.TripsModelInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,12 +53,25 @@ import com.vividsolutions.jts.geom.LineString;
  * This is needed because route names are intended for customer information, but scheduling personnel need to know about where a particular trip
  * actually goes.
  * 
+ * Variant names are guaranteed to be unique (among variants for a
+ * route) but not stable.  They are generated to be as useful as can
+ * be reasonably done by machine.  For instance, if a variant is the
+ * only variant of the N that ends at Coney Island, the name will be
+ * "N to Coney Island".  But if multiple variants end at Coney Island
+ * (but have different stops elsewhere), that name would not be
+ * chosen.  OTP also tries start and intermediate stations ("from
+ * Coney Island", or "via Whitehall", or even combinations ("from
+ * Coney Island via Whitehall").  But if there is no way to create a
+ * unique name from start/end/intermediate stops, then the best we can
+ * do is to create a "like [trip id]" name, which at least tells you
+ * where in the GTFS you can find a related trip.
+ *
  * @author novalis
  * 
  */
-@XmlRootElement(name="RouteVariant")
+@XmlRootElement(name = "RouteVariant")
 public class RouteVariant implements Serializable {
-    private static final Logger _log = LoggerFactory.getLogger(RouteVariant.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RouteVariant.class);
 
     private static final long serialVersionUID = -3110443015998033630L;
 
@@ -74,7 +85,7 @@ public class RouteVariant implements Serializable {
 
     private TraverseMode mode;
 
-    private ArrayList<AgencyAndId> trips;
+    private ArrayList<TripsModelInfo> trips;
 
     private ArrayList<Stop> stops;
 
@@ -91,8 +102,6 @@ public class RouteVariant implements Serializable {
     @JsonIgnore
     private ArrayList<PatternInterlineDwell> interlines;
 
-    private ArrayList<String> tripHeadsigns;
-    
     private Route route;
 
     private String direction;
@@ -106,26 +115,11 @@ public class RouteVariant implements Serializable {
     public RouteVariant(Route route, ArrayList<Stop> stops) {
         this.route = route;
         this.stops = stops;
-        trips = new ArrayList<AgencyAndId>();
+        trips = new ArrayList<TripsModelInfo>();
         segments = new ArrayList<RouteSegment>();
         exemplarSegments = new ArrayList<RouteSegment>();
         interlines = new ArrayList<PatternInterlineDwell>();
         this.mode = GtfsLibrary.getTraverseMode(route);
-        tripHeadsigns = new ArrayList<String>();
-    }
-
-    public void addTrip(Trip trip) {
-        if (!trips.contains(trip.getId())) {
-            trips.add(trip.getId());
-            if (direction == null) {
-                direction = trip.getDirectionId();
-                tripHeadsigns.add(trip.getTripHeadsign());
-            } else {
-                if (!direction.equals(trip.getDirectionId())) {
-                    direction = MULTIDIRECTION;
-                }
-            }
-        }
     }
 
     public void addExemplarSegment(RouteSegment segment) {
@@ -170,7 +164,7 @@ public class RouteVariant implements Serializable {
             segment = successors.get(segment.hopOut);
         }
         if (i != exemplarSegments.size()) {
-            _log.error("Failed to organize hops in route variant " + name);
+            LOG.error("Failed to organize hops in route variant " + name);
         }
     }
 
@@ -214,8 +208,7 @@ public class RouteVariant implements Serializable {
 
     @XmlElementWrapper
     @XmlElement(name = "trip")
-    @XmlJavaTypeAdapter(AgencyAndIdAdapter.class)
-    public List<AgencyAndId> getTrips() {
+    public List<TripsModelInfo> getTrips() {
         return trips;
     }
 
@@ -232,7 +225,7 @@ public class RouteVariant implements Serializable {
         return direction;
     }
 
-    @JsonSerialize(using=EncodedPolylineJSONSerializer.class)
+    @JsonSerialize(using = EncodedPolylineJSONSerializer.class)
     @XmlJavaTypeAdapter(LineStringAdapter.class)
     public LineString getGeometry() {
         if (geometry == null) {
@@ -247,10 +240,21 @@ public class RouteVariant implements Serializable {
             geometry = GeometryUtils.getGeometryFactory().createLineString(
                     coords.toArray(coordArray));
 
-
-
         }
         return geometry;
+    }
+    
+    /**
+     * @param index The index of the segment in the list
+     * @return The partial geometry between this segment's stop and the next one.
+     */
+    public LineString getGeometrySegment(int index) {
+        RouteSegment segment = exemplarSegments.get(index);
+        if (segment.hopOut != null) {
+            return GeometryUtils.getGeometryFactory().createLineString(
+                    segment.getGeometry().getCoordinates());
+        }
+        return null;
     }
 
     @JsonIgnore
@@ -271,13 +275,16 @@ public class RouteVariant implements Serializable {
         return interlines;
     }
 
-    public void addTripHeadsign(String tripHeadsigns) {
-        this.tripHeadsigns.add(tripHeadsigns);
+    public void addTrip(Trip trip, int number) {
+        this.trips.add(new TripsModelInfo(trip.getTripHeadsign(), number, trip.getServiceId()
+                .getId(), trip.getId()));
+        if (direction == null) {
+            direction = trip.getDirectionId();
+        } else {
+            if (!direction.equals(trip.getDirectionId())) {
+                direction = MULTIDIRECTION;
+            }
+        }
     }
 
-    @XmlElementWrapper
-    @XmlElement(name = "headsign")
-    public ArrayList<String> getTripHeadsigns() {
-        return tripHeadsigns;
-    }
 }

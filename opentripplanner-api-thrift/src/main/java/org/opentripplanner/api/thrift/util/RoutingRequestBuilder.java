@@ -7,6 +7,7 @@ import org.opentripplanner.api.thrift.definition.LatLng;
 import org.opentripplanner.api.thrift.definition.Location;
 import org.opentripplanner.api.thrift.definition.TravelMode;
 import org.opentripplanner.api.thrift.definition.TripParameters;
+import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.graph.Graph;
 
@@ -17,33 +18,58 @@ import lombok.NoArgsConstructor;
  * 
  * @author avi
  */
-@NoArgsConstructor
 public class RoutingRequestBuilder {
 
-    private final RoutingRequest routingRequest = new RoutingRequest();
+    private final RoutingRequest routingRequest;
 
     private Graph graph;
 
+    public RoutingRequestBuilder() {
+        routingRequest = new RoutingRequest();
+    }
+    
     /**
      * Initialize with given TripParameters.
      * 
      * @param tripParams
      */
     public RoutingRequestBuilder(TripParameters tripParams) {
+        this();
         addTripParameters(tripParams);
+    }
+    
+    /**
+     * Initialize with a prototype RoutingRequest (which will be copied).
+     */
+    public RoutingRequestBuilder(RoutingRequest prototypeRequest) {
+        routingRequest = prototypeRequest.clone();
     }
 
     /**
      * Convert a LatLng structure into an internal String representation.
      * 
-     * TODO(flamholz): put this on something inheriting from LatLng?
+     * @param latlng
+     * @return String that is accepted internally as a LatLng.
+     */
+    private static GenericLocation makeGenericLocation(final LatLng latlng) {
+        GenericLocation loc = new GenericLocation();
+        loc.setLat(latlng.getLat());
+        loc.setLng(latlng.getLng());
+        return loc;
+    }
+    
+    /**
+     * Convert a Location structure into an internal String representation.
      * 
      * @param latlng
      * @return String that is accepted internally as a LatLng.
      */
-    private static String latLngToString(final LatLng latlng) {
-        // NOTE: 7 decimal places means better than cm resolution.
-        return String.format("%.7f,%.7f", latlng.getLat(), latlng.getLng());
+    private static GenericLocation makeGenericLocation(final Location loc) {
+        GenericLocation genericLoc = makeGenericLocation(loc.getLat_lng());
+        if (loc.isSetHeading()) {
+            genericLoc.setHeading(loc.getHeading());
+        }
+        return genericLoc;
     }
 
     /**
@@ -89,8 +115,8 @@ public class RoutingRequestBuilder {
             setArriveBy(tripParams.getArrive_by());
         }
 
-        setOrigin(tripParams.getOrigin().getLat_lng());
-        setDestination(tripParams.getDestination().getLat_lng());
+        setOrigin(tripParams.getOrigin());
+        setDestination(tripParams.getDestination());
 
         return this;
     }
@@ -125,7 +151,7 @@ public class RoutingRequestBuilder {
      * @return self reference
      */
     public RoutingRequestBuilder setOrigin(Location origin) {
-        routingRequest.setFrom(latLngToString(origin.getLat_lng()));
+        routingRequest.setFrom(makeGenericLocation(origin));
         return this;
     }
 
@@ -136,7 +162,7 @@ public class RoutingRequestBuilder {
      * @return self reference
      */
     public RoutingRequestBuilder setOrigin(LatLng origin) {
-        routingRequest.setFrom(latLngToString(origin));
+        routingRequest.setFrom(makeGenericLocation(origin));
         return this;
     }
 
@@ -147,7 +173,7 @@ public class RoutingRequestBuilder {
      * @return self reference
      */
     public RoutingRequestBuilder setDestination(Location dest) {
-        routingRequest.setTo(latLngToString(dest.getLat_lng()));
+        routingRequest.setTo(makeGenericLocation(dest));
         return this;
     }
 
@@ -158,7 +184,7 @@ public class RoutingRequestBuilder {
      * @return self reference
      */
     public RoutingRequestBuilder setDestination(LatLng dest) {
-        routingRequest.setTo(latLngToString(dest));
+        routingRequest.setTo(makeGenericLocation(dest));
         return this;
     }
 

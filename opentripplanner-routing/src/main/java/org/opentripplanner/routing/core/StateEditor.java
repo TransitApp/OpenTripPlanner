@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.onebusaway.gtfs.model.AgencyAndId;
+import org.onebusaway.gtfs.model.Stop;
+import org.onebusaway.gtfs.model.Trip;
 import org.opentripplanner.routing.automata.AutomatonState;
 import org.opentripplanner.routing.edgetype.TripPattern;
 import org.opentripplanner.routing.graph.Edge;
@@ -135,8 +137,8 @@ public class StateEditor {
 
             // check that time changes are coherent with edge traversal
             // direction
-            if (traversingBackward ? (child.getTimeDeltaSec() > 0)
-                    : (child.getTimeDeltaSec() < 0)) {
+            if (traversingBackward ? (child.getTimeDeltaSeconds() > 0)
+                    : (child.getTimeDeltaSeconds() < 0)) {
                 LOG.trace("Time was incremented the wrong direction during state editing. {}",
                         child.backEdge);
                 return null;
@@ -243,21 +245,24 @@ public class StateEditor {
         child.weight += weight;
     }
 
-
     /**
      * Advance or rewind the time of the new state by the given non-negative amount. Direction of
      * time is inferred from the direction of traversal. This is the only element of state that runs
      * backward when traversing backward.
      */
     public void incrementTimeInSeconds(int seconds) {
-        if (seconds < 0) {
+        incrementTimeInMilliseconds(seconds * 1000);
+    }
+    
+    public void incrementTimeInMilliseconds(int milliseconds) {
+        if (milliseconds < 0) {
             LOG.warn("A state's time is being incremented by a negative amount while traversing edge "
                     + child.getBackEdge());
             defectiveTraversal = true;
             return;
         }
-        child.time += (traversingBackward ? -seconds : seconds);
-    }
+        child.time += (traversingBackward ? -milliseconds : milliseconds);
+    }    
 
     public void incrementWalkDistance(double length) {
         if (length < 0) {
@@ -285,18 +290,30 @@ public class StateEditor {
         child.stateData.tripId = tripId;
     }
 
-    public void setInitialWaitTime (long initialWaitTime) {
+    public void setPreviousTrip(Trip previousTrip) {
         cloneStateDataAsNeeded();
-        //LOG.debug("initial wait time set to {} secs", initialWaitTime);
-        child.stateData.initialWaitTime = initialWaitTime;
+        child.stateData.previousTrip = previousTrip;
     }
     
-    public void setBackMode (TraverseMode mode) {
+    public void setInitialWaitTimeSeconds(long initialWaitTimeSeconds) {
+        cloneStateDataAsNeeded();
+        child.stateData.initialWaitTime = initialWaitTimeSeconds;
+    }
+    
+    public void setBackMode(TraverseMode mode) {
         if (mode == child.stateData.backMode)
             return;
         
         cloneStateDataAsNeeded();
         child.stateData.backMode = mode;
+    }
+
+    public void setBackWalkingBike (boolean walkingBike) {
+        if (walkingBike == child.stateData.backWalkingBike)
+            return;
+        
+        cloneStateDataAsNeeded();
+        child.stateData.backWalkingBike = walkingBike;
     }
 
     /** 
@@ -364,23 +381,23 @@ public class StateEditor {
         }
     }
 
-    public void setPreviousStop(Vertex previousStop) {
+    public void setPreviousStop(Stop previousStop) {
         cloneStateDataAsNeeded();
         child.stateData.previousStop = previousStop;
     }
 
-    public void setLastAlightedTime(long lastAlightedTime) {
+    public void setLastAlightedTimeSeconds(long lastAlightedTimeSeconds) {
         cloneStateDataAsNeeded();
-        child.stateData.lastAlightedTime = lastAlightedTime;
+        child.stateData.lastAlightedTime = lastAlightedTimeSeconds;
     }
 
-    public void setTime(long t) {
-        child.time = t;
+    public void setTimeSeconds(long seconds) {
+        child.time = seconds * 1000;
     }
 
-    public void setStartTime(long t) {
+    public void setStartTimeSeconds(long seconds) {
         cloneStateDataAsNeeded();
-        child.stateData.startTime = t;
+        child.stateData.startTime = seconds;
     }
 
     /**
@@ -394,6 +411,8 @@ public class StateEditor {
         child.stateData.route = state.stateData.route;
         child.stateData.tripTimes = state.stateData.tripTimes;
         child.stateData.tripId = state.stateData.tripId;
+        child.stateData.previousTrip = state.stateData.previousTrip;
+        child.stateData.previousStop = state.stateData.previousStop;
         child.stateData.zone = state.stateData.zone;
         child.stateData.extensions = state.stateData.extensions;
         child.stateData.usingRentedBike = state.stateData.usingRentedBike;
@@ -410,18 +429,22 @@ public class StateEditor {
         return child.getExtension(key);
     }
 
-    public long getTime() {
-        return child.getTime();
+    public long getTimeSeconds() {
+        return child.getTimeSeconds();
     }
 
-    public long getElapsedTime() {
-        return child.getElapsedTime();
+    public long getElapsedTimeSeconds() {
+        return child.getElapsedTimeSeconds();
     }
 
     public AgencyAndId getTripId() {
         return child.getTripId();
     }
 
+    public Trip getPreviousTrip() {
+        return child.getPreviousTrip();
+    }
+    
     public String getZone() {
         return child.getZone();
     }
@@ -446,12 +469,8 @@ public class StateEditor {
         return child.isBikeRenting();
     }
 
-    public Vertex getPreviousStop() {
-        return child.getPreviousStop();
-    }
-
-    public long getLastAlightedTime() {
-        return child.getLastAlightedTime();
+    public long getLastAlightedTimeSeconds() {
+        return child.getLastAlightedTimeSeconds();
     }
 
     public double getWalkDistance() {
@@ -478,12 +497,12 @@ public class StateEditor {
         if (patches != null) {
             for (Patch patch : patches) {
                 active  = false;
-                display = patch.displayDuring(child.stateData.opt, child.getStartTime(),
-                                              child.getTime());
+                display = patch.displayDuring(child.stateData.opt, child.getStartTimeSeconds(),
+                                              child.getTimeSeconds());
 
                 if(!display) {
-                    active = patch.activeDuring(child.stateData.opt, child.getStartTime(),
-                                                child.getTime());
+                    active = patch.activeDuring(child.stateData.opt, child.getStartTimeSeconds(),
+                                                child.getTimeSeconds());
                 }
 
                 if(display || active) {
@@ -556,8 +575,8 @@ public class StateEditor {
         child.stateData.serviceDay = day;
     }
 
-    public void setBikeRentalNetwork(String network) {
+    public void setBikeRentalNetwork(Set<String> networks) {
         cloneStateDataAsNeeded();
-        child.stateData.bikeRentalNetwork = network;
+        child.stateData.bikeRentalNetworks = networks;
     }
 }

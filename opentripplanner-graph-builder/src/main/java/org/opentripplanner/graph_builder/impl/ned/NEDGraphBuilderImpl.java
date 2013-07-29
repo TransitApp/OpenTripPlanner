@@ -70,6 +70,12 @@ public class NEDGraphBuilderImpl implements GraphBuilder {
 
     private DistanceLibrary distanceLibrary = SphericalDistanceLibrary.getInstance();
 
+    public NEDGraphBuilderImpl() { /* This makes me a "bean" */ };
+    
+    public NEDGraphBuilderImpl(NEDGridCoverageFactory factory) {
+        this.setGridCoverageFactory(factory);
+    }
+
     public List<String> provides() {
         return Arrays.asList("elevation");
     }
@@ -96,7 +102,7 @@ public class NEDGraphBuilderImpl implements GraphBuilder {
         // interpolation internally)
         coverage = (gridCov instanceof GridCoverage2D) ? Interpolator2D.create(
                 (GridCoverage2D) gridCov, new InterpolationBilinear()) : gridCov;
-
+        log.info("setting street elevation profiles from NED data...");
         List<EdgeWithElevation> edgesWithElevation = new ArrayList<EdgeWithElevation>();
         int nProcessed = 0;
         int nTotal = graph.countEdges();

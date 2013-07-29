@@ -73,8 +73,6 @@ public class SimplifiedPathServiceImpl implements PathService {
             options.rctx.pathParsers = new PathParser[] { new Parser() };
         }
 
-        // ideally reset walk distance after initializing heuristic with specified maxWalk
-        options.setMaxWalkDistance(Double.MAX_VALUE);
         LOG.debug("rreq={}", options);
         
         // only use the threaded bidi heuristic for transit
@@ -152,7 +150,9 @@ public class SimplifiedPathServiceImpl implements PathService {
                     nontransitLeg, 
                     LINK, transitLeg, star(XFER, transitLeg), LINK, 
                     nontransitLeg);
-            Nonterminal itinerary = choice(nontransitLeg, transitItinerary);
+            Nonterminal onboardItinerary = seq(plus(RIDE), plus(STATION), star(XFER, transitLeg),
+                    LINK, nontransitLeg);
+            Nonterminal itinerary = choice(nontransitLeg, transitItinerary, onboardItinerary);
             DFA = itinerary.toDFA().minimize();
             System.out.println(DFA.toGraphViz());
             System.out.println(DFA.dumpTable());

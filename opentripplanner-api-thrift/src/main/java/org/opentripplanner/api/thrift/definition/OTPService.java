@@ -42,6 +42,13 @@ public class OTPService {
     public GraphVerticesResponse GetVertices(GraphVerticesRequest req) throws org.apache.thrift.TException;
 
     /**
+     * Get the graph edges.
+     * 
+     * @param req
+     */
+    public GraphEdgesResponse GetEdges(GraphEdgesRequest req) throws org.apache.thrift.TException;
+
+    /**
      * Find the nearest graph vertex.
      * 
      * @param req
@@ -54,6 +61,20 @@ public class OTPService {
      * @param req
      */
     public FindNearestEdgesResponse FindNearestEdges(FindNearestEdgesRequest req) throws org.apache.thrift.TException;
+
+    /**
+     * Bulk querying for nearest vertices.
+     * 
+     * @param req
+     */
+    public BulkFindNearestVertexResponse BulkFindNearestVertex(BulkFindNearestVertexRequest req) throws org.apache.thrift.TException;
+
+    /**
+     * Bulk querying for nearest edges.
+     * 
+     * @param req
+     */
+    public BulkFindNearestEdgesResponse BulkFindNearestEdges(BulkFindNearestEdgesRequest req) throws org.apache.thrift.TException;
 
     /**
      * Find paths for a single trip.
@@ -75,9 +96,15 @@ public class OTPService {
 
     public void GetVertices(GraphVerticesRequest req, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.GetVertices_call> resultHandler) throws org.apache.thrift.TException;
 
+    public void GetEdges(GraphEdgesRequest req, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.GetEdges_call> resultHandler) throws org.apache.thrift.TException;
+
     public void FindNearestVertex(FindNearestVertexRequest req, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.FindNearestVertex_call> resultHandler) throws org.apache.thrift.TException;
 
     public void FindNearestEdges(FindNearestEdgesRequest req, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.FindNearestEdges_call> resultHandler) throws org.apache.thrift.TException;
+
+    public void BulkFindNearestVertex(BulkFindNearestVertexRequest req, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.BulkFindNearestVertex_call> resultHandler) throws org.apache.thrift.TException;
+
+    public void BulkFindNearestEdges(BulkFindNearestEdgesRequest req, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.BulkFindNearestEdges_call> resultHandler) throws org.apache.thrift.TException;
 
     public void FindPaths(FindPathsRequest req, org.apache.thrift.async.AsyncMethodCallback<AsyncClient.FindPaths_call> resultHandler) throws org.apache.thrift.TException;
 
@@ -128,6 +155,29 @@ public class OTPService {
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "GetVertices failed: unknown result");
     }
 
+    public GraphEdgesResponse GetEdges(GraphEdgesRequest req) throws org.apache.thrift.TException
+    {
+      send_GetEdges(req);
+      return recv_GetEdges();
+    }
+
+    public void send_GetEdges(GraphEdgesRequest req) throws org.apache.thrift.TException
+    {
+      GetEdges_args args = new GetEdges_args();
+      args.setReq(req);
+      sendBase("GetEdges", args);
+    }
+
+    public GraphEdgesResponse recv_GetEdges() throws org.apache.thrift.TException
+    {
+      GetEdges_result result = new GetEdges_result();
+      receiveBase(result, "GetEdges");
+      if (result.isSetSuccess()) {
+        return result.success;
+      }
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "GetEdges failed: unknown result");
+    }
+
     public FindNearestVertexResponse FindNearestVertex(FindNearestVertexRequest req) throws org.apache.thrift.TException
     {
       send_FindNearestVertex(req);
@@ -172,6 +222,52 @@ public class OTPService {
         return result.success;
       }
       throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "FindNearestEdges failed: unknown result");
+    }
+
+    public BulkFindNearestVertexResponse BulkFindNearestVertex(BulkFindNearestVertexRequest req) throws org.apache.thrift.TException
+    {
+      send_BulkFindNearestVertex(req);
+      return recv_BulkFindNearestVertex();
+    }
+
+    public void send_BulkFindNearestVertex(BulkFindNearestVertexRequest req) throws org.apache.thrift.TException
+    {
+      BulkFindNearestVertex_args args = new BulkFindNearestVertex_args();
+      args.setReq(req);
+      sendBase("BulkFindNearestVertex", args);
+    }
+
+    public BulkFindNearestVertexResponse recv_BulkFindNearestVertex() throws org.apache.thrift.TException
+    {
+      BulkFindNearestVertex_result result = new BulkFindNearestVertex_result();
+      receiveBase(result, "BulkFindNearestVertex");
+      if (result.isSetSuccess()) {
+        return result.success;
+      }
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "BulkFindNearestVertex failed: unknown result");
+    }
+
+    public BulkFindNearestEdgesResponse BulkFindNearestEdges(BulkFindNearestEdgesRequest req) throws org.apache.thrift.TException
+    {
+      send_BulkFindNearestEdges(req);
+      return recv_BulkFindNearestEdges();
+    }
+
+    public void send_BulkFindNearestEdges(BulkFindNearestEdgesRequest req) throws org.apache.thrift.TException
+    {
+      BulkFindNearestEdges_args args = new BulkFindNearestEdges_args();
+      args.setReq(req);
+      sendBase("BulkFindNearestEdges", args);
+    }
+
+    public BulkFindNearestEdgesResponse recv_BulkFindNearestEdges() throws org.apache.thrift.TException
+    {
+      BulkFindNearestEdges_result result = new BulkFindNearestEdges_result();
+      receiveBase(result, "BulkFindNearestEdges");
+      if (result.isSetSuccess()) {
+        return result.success;
+      }
+      throw new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.MISSING_RESULT, "BulkFindNearestEdges failed: unknown result");
     }
 
     public FindPathsResponse FindPaths(FindPathsRequest req) throws org.apache.thrift.TException
@@ -270,6 +366,38 @@ public class OTPService {
       }
     }
 
+    public void GetEdges(GraphEdgesRequest req, org.apache.thrift.async.AsyncMethodCallback<GetEdges_call> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      GetEdges_call method_call = new GetEdges_call(req, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class GetEdges_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private GraphEdgesRequest req;
+      public GetEdges_call(GraphEdgesRequest req, org.apache.thrift.async.AsyncMethodCallback<GetEdges_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.req = req;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("GetEdges", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        GetEdges_args args = new GetEdges_args();
+        args.setReq(req);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public GraphEdgesResponse getResult() throws org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_GetEdges();
+      }
+    }
+
     public void FindNearestVertex(FindNearestVertexRequest req, org.apache.thrift.async.AsyncMethodCallback<FindNearestVertex_call> resultHandler) throws org.apache.thrift.TException {
       checkReady();
       FindNearestVertex_call method_call = new FindNearestVertex_call(req, resultHandler, this, ___protocolFactory, ___transport);
@@ -331,6 +459,70 @@ public class OTPService {
         org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
         org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
         return (new Client(prot)).recv_FindNearestEdges();
+      }
+    }
+
+    public void BulkFindNearestVertex(BulkFindNearestVertexRequest req, org.apache.thrift.async.AsyncMethodCallback<BulkFindNearestVertex_call> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      BulkFindNearestVertex_call method_call = new BulkFindNearestVertex_call(req, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class BulkFindNearestVertex_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private BulkFindNearestVertexRequest req;
+      public BulkFindNearestVertex_call(BulkFindNearestVertexRequest req, org.apache.thrift.async.AsyncMethodCallback<BulkFindNearestVertex_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.req = req;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("BulkFindNearestVertex", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        BulkFindNearestVertex_args args = new BulkFindNearestVertex_args();
+        args.setReq(req);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public BulkFindNearestVertexResponse getResult() throws org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_BulkFindNearestVertex();
+      }
+    }
+
+    public void BulkFindNearestEdges(BulkFindNearestEdgesRequest req, org.apache.thrift.async.AsyncMethodCallback<BulkFindNearestEdges_call> resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      BulkFindNearestEdges_call method_call = new BulkFindNearestEdges_call(req, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class BulkFindNearestEdges_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private BulkFindNearestEdgesRequest req;
+      public BulkFindNearestEdges_call(BulkFindNearestEdgesRequest req, org.apache.thrift.async.AsyncMethodCallback<BulkFindNearestEdges_call> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.req = req;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("BulkFindNearestEdges", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        BulkFindNearestEdges_args args = new BulkFindNearestEdges_args();
+        args.setReq(req);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public BulkFindNearestEdgesResponse getResult() throws org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        return (new Client(prot)).recv_BulkFindNearestEdges();
       }
     }
 
@@ -412,8 +604,11 @@ public class OTPService {
 
     private static <I extends Iface> Map<String,  org.apache.thrift.ProcessFunction<I, ? extends  org.apache.thrift.TBase>> getProcessMap(Map<String,  org.apache.thrift.ProcessFunction<I, ? extends  org.apache.thrift.TBase>> processMap) {
       processMap.put("GetVertices", new GetVertices());
+      processMap.put("GetEdges", new GetEdges());
       processMap.put("FindNearestVertex", new FindNearestVertex());
       processMap.put("FindNearestEdges", new FindNearestEdges());
+      processMap.put("BulkFindNearestVertex", new BulkFindNearestVertex());
+      processMap.put("BulkFindNearestEdges", new BulkFindNearestEdges());
       processMap.put("FindPaths", new FindPaths());
       processMap.put("BulkFindPaths", new BulkFindPaths());
       return processMap;
@@ -431,6 +626,22 @@ public class OTPService {
       protected GetVertices_result getResult(I iface, GetVertices_args args) throws org.apache.thrift.TException {
         GetVertices_result result = new GetVertices_result();
         result.success = iface.GetVertices(args.req);
+        return result;
+      }
+    }
+
+    private static class GetEdges<I extends Iface> extends org.apache.thrift.ProcessFunction<I, GetEdges_args> {
+      public GetEdges() {
+        super("GetEdges");
+      }
+
+      protected GetEdges_args getEmptyArgsInstance() {
+        return new GetEdges_args();
+      }
+
+      protected GetEdges_result getResult(I iface, GetEdges_args args) throws org.apache.thrift.TException {
+        GetEdges_result result = new GetEdges_result();
+        result.success = iface.GetEdges(args.req);
         return result;
       }
     }
@@ -463,6 +674,38 @@ public class OTPService {
       protected FindNearestEdges_result getResult(I iface, FindNearestEdges_args args) throws org.apache.thrift.TException {
         FindNearestEdges_result result = new FindNearestEdges_result();
         result.success = iface.FindNearestEdges(args.req);
+        return result;
+      }
+    }
+
+    private static class BulkFindNearestVertex<I extends Iface> extends org.apache.thrift.ProcessFunction<I, BulkFindNearestVertex_args> {
+      public BulkFindNearestVertex() {
+        super("BulkFindNearestVertex");
+      }
+
+      protected BulkFindNearestVertex_args getEmptyArgsInstance() {
+        return new BulkFindNearestVertex_args();
+      }
+
+      protected BulkFindNearestVertex_result getResult(I iface, BulkFindNearestVertex_args args) throws org.apache.thrift.TException {
+        BulkFindNearestVertex_result result = new BulkFindNearestVertex_result();
+        result.success = iface.BulkFindNearestVertex(args.req);
+        return result;
+      }
+    }
+
+    private static class BulkFindNearestEdges<I extends Iface> extends org.apache.thrift.ProcessFunction<I, BulkFindNearestEdges_args> {
+      public BulkFindNearestEdges() {
+        super("BulkFindNearestEdges");
+      }
+
+      protected BulkFindNearestEdges_args getEmptyArgsInstance() {
+        return new BulkFindNearestEdges_args();
+      }
+
+      protected BulkFindNearestEdges_result getResult(I iface, BulkFindNearestEdges_args args) throws org.apache.thrift.TException {
+        BulkFindNearestEdges_result result = new BulkFindNearestEdges_result();
+        result.success = iface.BulkFindNearestEdges(args.req);
         return result;
       }
     }
@@ -1197,6 +1440,710 @@ public class OTPService {
         BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           struct.success = new GraphVerticesResponse();
+          struct.success.read(iprot);
+          struct.setSuccessIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class GetEdges_args implements org.apache.thrift.TBase<GetEdges_args, GetEdges_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("GetEdges_args");
+
+    private static final org.apache.thrift.protocol.TField REQ_FIELD_DESC = new org.apache.thrift.protocol.TField("req", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new GetEdges_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new GetEdges_argsTupleSchemeFactory());
+    }
+
+    private GraphEdgesRequest req; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      REQ((short)1, "req");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // REQ
+            return REQ;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.REQ, new org.apache.thrift.meta_data.FieldMetaData("req", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, GraphEdgesRequest.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(GetEdges_args.class, metaDataMap);
+    }
+
+    public GetEdges_args() {
+    }
+
+    public GetEdges_args(
+      GraphEdgesRequest req)
+    {
+      this();
+      this.req = req;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public GetEdges_args(GetEdges_args other) {
+      if (other.isSetReq()) {
+        this.req = new GraphEdgesRequest(other.req);
+      }
+    }
+
+    public GetEdges_args deepCopy() {
+      return new GetEdges_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.req = null;
+    }
+
+    public GraphEdgesRequest getReq() {
+      return this.req;
+    }
+
+    public void setReq(GraphEdgesRequest req) {
+      this.req = req;
+    }
+
+    public void unsetReq() {
+      this.req = null;
+    }
+
+    /** Returns true if field req is set (has been assigned a value) and false otherwise */
+    public boolean isSetReq() {
+      return this.req != null;
+    }
+
+    public void setReqIsSet(boolean value) {
+      if (!value) {
+        this.req = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case REQ:
+        if (value == null) {
+          unsetReq();
+        } else {
+          setReq((GraphEdgesRequest)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case REQ:
+        return getReq();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case REQ:
+        return isSetReq();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof GetEdges_args)
+        return this.equals((GetEdges_args)that);
+      return false;
+    }
+
+    public boolean equals(GetEdges_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_req = true && this.isSetReq();
+      boolean that_present_req = true && that.isSetReq();
+      if (this_present_req || that_present_req) {
+        if (!(this_present_req && that_present_req))
+          return false;
+        if (!this.req.equals(that.req))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(GetEdges_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      GetEdges_args typedOther = (GetEdges_args)other;
+
+      lastComparison = Boolean.valueOf(isSetReq()).compareTo(typedOther.isSetReq());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetReq()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.req, typedOther.req);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("GetEdges_args(");
+      boolean first = true;
+
+      sb.append("req:");
+      if (this.req == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.req);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class GetEdges_argsStandardSchemeFactory implements SchemeFactory {
+      public GetEdges_argsStandardScheme getScheme() {
+        return new GetEdges_argsStandardScheme();
+      }
+    }
+
+    private static class GetEdges_argsStandardScheme extends StandardScheme<GetEdges_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, GetEdges_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // REQ
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.req = new GraphEdgesRequest();
+                struct.req.read(iprot);
+                struct.setReqIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, GetEdges_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.req != null) {
+          oprot.writeFieldBegin(REQ_FIELD_DESC);
+          struct.req.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class GetEdges_argsTupleSchemeFactory implements SchemeFactory {
+      public GetEdges_argsTupleScheme getScheme() {
+        return new GetEdges_argsTupleScheme();
+      }
+    }
+
+    private static class GetEdges_argsTupleScheme extends TupleScheme<GetEdges_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, GetEdges_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetReq()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetReq()) {
+          struct.req.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, GetEdges_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.req = new GraphEdgesRequest();
+          struct.req.read(iprot);
+          struct.setReqIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class GetEdges_result implements org.apache.thrift.TBase<GetEdges_result, GetEdges_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("GetEdges_result");
+
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new GetEdges_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new GetEdges_resultTupleSchemeFactory());
+    }
+
+    private GraphEdgesResponse success; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, GraphEdgesResponse.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(GetEdges_result.class, metaDataMap);
+    }
+
+    public GetEdges_result() {
+    }
+
+    public GetEdges_result(
+      GraphEdgesResponse success)
+    {
+      this();
+      this.success = success;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public GetEdges_result(GetEdges_result other) {
+      if (other.isSetSuccess()) {
+        this.success = new GraphEdgesResponse(other.success);
+      }
+    }
+
+    public GetEdges_result deepCopy() {
+      return new GetEdges_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+    }
+
+    public GraphEdgesResponse getSuccess() {
+      return this.success;
+    }
+
+    public void setSuccess(GraphEdgesResponse success) {
+      this.success = success;
+    }
+
+    public void unsetSuccess() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean isSetSuccess() {
+      return this.success != null;
+    }
+
+    public void setSuccessIsSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unsetSuccess();
+        } else {
+          setSuccess((GraphEdgesResponse)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return getSuccess();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return isSetSuccess();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof GetEdges_result)
+        return this.equals((GetEdges_result)that);
+      return false;
+    }
+
+    public boolean equals(GetEdges_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.isSetSuccess();
+      boolean that_present_success = true && that.isSetSuccess();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(GetEdges_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      GetEdges_result typedOther = (GetEdges_result)other;
+
+      lastComparison = Boolean.valueOf(isSetSuccess()).compareTo(typedOther.isSetSuccess());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetSuccess()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("GetEdges_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class GetEdges_resultStandardSchemeFactory implements SchemeFactory {
+      public GetEdges_resultStandardScheme getScheme() {
+        return new GetEdges_resultStandardScheme();
+      }
+    }
+
+    private static class GetEdges_resultStandardScheme extends StandardScheme<GetEdges_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, GetEdges_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.success = new GraphEdgesResponse();
+                struct.success.read(iprot);
+                struct.setSuccessIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, GetEdges_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          struct.success.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class GetEdges_resultTupleSchemeFactory implements SchemeFactory {
+      public GetEdges_resultTupleScheme getScheme() {
+        return new GetEdges_resultTupleScheme();
+      }
+    }
+
+    private static class GetEdges_resultTupleScheme extends TupleScheme<GetEdges_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, GetEdges_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetSuccess()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetSuccess()) {
+          struct.success.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, GetEdges_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.success = new GraphEdgesResponse();
           struct.success.read(iprot);
           struct.setSuccessIsSet(true);
         }
@@ -2605,6 +3552,1414 @@ public class OTPService {
         BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
           struct.success = new FindNearestEdgesResponse();
+          struct.success.read(iprot);
+          struct.setSuccessIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class BulkFindNearestVertex_args implements org.apache.thrift.TBase<BulkFindNearestVertex_args, BulkFindNearestVertex_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("BulkFindNearestVertex_args");
+
+    private static final org.apache.thrift.protocol.TField REQ_FIELD_DESC = new org.apache.thrift.protocol.TField("req", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new BulkFindNearestVertex_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new BulkFindNearestVertex_argsTupleSchemeFactory());
+    }
+
+    private BulkFindNearestVertexRequest req; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      REQ((short)1, "req");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // REQ
+            return REQ;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.REQ, new org.apache.thrift.meta_data.FieldMetaData("req", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, BulkFindNearestVertexRequest.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(BulkFindNearestVertex_args.class, metaDataMap);
+    }
+
+    public BulkFindNearestVertex_args() {
+    }
+
+    public BulkFindNearestVertex_args(
+      BulkFindNearestVertexRequest req)
+    {
+      this();
+      this.req = req;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public BulkFindNearestVertex_args(BulkFindNearestVertex_args other) {
+      if (other.isSetReq()) {
+        this.req = new BulkFindNearestVertexRequest(other.req);
+      }
+    }
+
+    public BulkFindNearestVertex_args deepCopy() {
+      return new BulkFindNearestVertex_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.req = null;
+    }
+
+    public BulkFindNearestVertexRequest getReq() {
+      return this.req;
+    }
+
+    public void setReq(BulkFindNearestVertexRequest req) {
+      this.req = req;
+    }
+
+    public void unsetReq() {
+      this.req = null;
+    }
+
+    /** Returns true if field req is set (has been assigned a value) and false otherwise */
+    public boolean isSetReq() {
+      return this.req != null;
+    }
+
+    public void setReqIsSet(boolean value) {
+      if (!value) {
+        this.req = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case REQ:
+        if (value == null) {
+          unsetReq();
+        } else {
+          setReq((BulkFindNearestVertexRequest)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case REQ:
+        return getReq();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case REQ:
+        return isSetReq();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof BulkFindNearestVertex_args)
+        return this.equals((BulkFindNearestVertex_args)that);
+      return false;
+    }
+
+    public boolean equals(BulkFindNearestVertex_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_req = true && this.isSetReq();
+      boolean that_present_req = true && that.isSetReq();
+      if (this_present_req || that_present_req) {
+        if (!(this_present_req && that_present_req))
+          return false;
+        if (!this.req.equals(that.req))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(BulkFindNearestVertex_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      BulkFindNearestVertex_args typedOther = (BulkFindNearestVertex_args)other;
+
+      lastComparison = Boolean.valueOf(isSetReq()).compareTo(typedOther.isSetReq());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetReq()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.req, typedOther.req);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("BulkFindNearestVertex_args(");
+      boolean first = true;
+
+      sb.append("req:");
+      if (this.req == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.req);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class BulkFindNearestVertex_argsStandardSchemeFactory implements SchemeFactory {
+      public BulkFindNearestVertex_argsStandardScheme getScheme() {
+        return new BulkFindNearestVertex_argsStandardScheme();
+      }
+    }
+
+    private static class BulkFindNearestVertex_argsStandardScheme extends StandardScheme<BulkFindNearestVertex_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, BulkFindNearestVertex_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // REQ
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.req = new BulkFindNearestVertexRequest();
+                struct.req.read(iprot);
+                struct.setReqIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, BulkFindNearestVertex_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.req != null) {
+          oprot.writeFieldBegin(REQ_FIELD_DESC);
+          struct.req.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class BulkFindNearestVertex_argsTupleSchemeFactory implements SchemeFactory {
+      public BulkFindNearestVertex_argsTupleScheme getScheme() {
+        return new BulkFindNearestVertex_argsTupleScheme();
+      }
+    }
+
+    private static class BulkFindNearestVertex_argsTupleScheme extends TupleScheme<BulkFindNearestVertex_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, BulkFindNearestVertex_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetReq()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetReq()) {
+          struct.req.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, BulkFindNearestVertex_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.req = new BulkFindNearestVertexRequest();
+          struct.req.read(iprot);
+          struct.setReqIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class BulkFindNearestVertex_result implements org.apache.thrift.TBase<BulkFindNearestVertex_result, BulkFindNearestVertex_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("BulkFindNearestVertex_result");
+
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new BulkFindNearestVertex_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new BulkFindNearestVertex_resultTupleSchemeFactory());
+    }
+
+    private BulkFindNearestVertexResponse success; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, BulkFindNearestVertexResponse.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(BulkFindNearestVertex_result.class, metaDataMap);
+    }
+
+    public BulkFindNearestVertex_result() {
+    }
+
+    public BulkFindNearestVertex_result(
+      BulkFindNearestVertexResponse success)
+    {
+      this();
+      this.success = success;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public BulkFindNearestVertex_result(BulkFindNearestVertex_result other) {
+      if (other.isSetSuccess()) {
+        this.success = new BulkFindNearestVertexResponse(other.success);
+      }
+    }
+
+    public BulkFindNearestVertex_result deepCopy() {
+      return new BulkFindNearestVertex_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+    }
+
+    public BulkFindNearestVertexResponse getSuccess() {
+      return this.success;
+    }
+
+    public void setSuccess(BulkFindNearestVertexResponse success) {
+      this.success = success;
+    }
+
+    public void unsetSuccess() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean isSetSuccess() {
+      return this.success != null;
+    }
+
+    public void setSuccessIsSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unsetSuccess();
+        } else {
+          setSuccess((BulkFindNearestVertexResponse)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return getSuccess();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return isSetSuccess();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof BulkFindNearestVertex_result)
+        return this.equals((BulkFindNearestVertex_result)that);
+      return false;
+    }
+
+    public boolean equals(BulkFindNearestVertex_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.isSetSuccess();
+      boolean that_present_success = true && that.isSetSuccess();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(BulkFindNearestVertex_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      BulkFindNearestVertex_result typedOther = (BulkFindNearestVertex_result)other;
+
+      lastComparison = Boolean.valueOf(isSetSuccess()).compareTo(typedOther.isSetSuccess());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetSuccess()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("BulkFindNearestVertex_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class BulkFindNearestVertex_resultStandardSchemeFactory implements SchemeFactory {
+      public BulkFindNearestVertex_resultStandardScheme getScheme() {
+        return new BulkFindNearestVertex_resultStandardScheme();
+      }
+    }
+
+    private static class BulkFindNearestVertex_resultStandardScheme extends StandardScheme<BulkFindNearestVertex_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, BulkFindNearestVertex_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.success = new BulkFindNearestVertexResponse();
+                struct.success.read(iprot);
+                struct.setSuccessIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, BulkFindNearestVertex_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          struct.success.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class BulkFindNearestVertex_resultTupleSchemeFactory implements SchemeFactory {
+      public BulkFindNearestVertex_resultTupleScheme getScheme() {
+        return new BulkFindNearestVertex_resultTupleScheme();
+      }
+    }
+
+    private static class BulkFindNearestVertex_resultTupleScheme extends TupleScheme<BulkFindNearestVertex_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, BulkFindNearestVertex_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetSuccess()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetSuccess()) {
+          struct.success.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, BulkFindNearestVertex_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.success = new BulkFindNearestVertexResponse();
+          struct.success.read(iprot);
+          struct.setSuccessIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class BulkFindNearestEdges_args implements org.apache.thrift.TBase<BulkFindNearestEdges_args, BulkFindNearestEdges_args._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("BulkFindNearestEdges_args");
+
+    private static final org.apache.thrift.protocol.TField REQ_FIELD_DESC = new org.apache.thrift.protocol.TField("req", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new BulkFindNearestEdges_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new BulkFindNearestEdges_argsTupleSchemeFactory());
+    }
+
+    private BulkFindNearestEdgesRequest req; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      REQ((short)1, "req");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // REQ
+            return REQ;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.REQ, new org.apache.thrift.meta_data.FieldMetaData("req", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, BulkFindNearestEdgesRequest.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(BulkFindNearestEdges_args.class, metaDataMap);
+    }
+
+    public BulkFindNearestEdges_args() {
+    }
+
+    public BulkFindNearestEdges_args(
+      BulkFindNearestEdgesRequest req)
+    {
+      this();
+      this.req = req;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public BulkFindNearestEdges_args(BulkFindNearestEdges_args other) {
+      if (other.isSetReq()) {
+        this.req = new BulkFindNearestEdgesRequest(other.req);
+      }
+    }
+
+    public BulkFindNearestEdges_args deepCopy() {
+      return new BulkFindNearestEdges_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.req = null;
+    }
+
+    public BulkFindNearestEdgesRequest getReq() {
+      return this.req;
+    }
+
+    public void setReq(BulkFindNearestEdgesRequest req) {
+      this.req = req;
+    }
+
+    public void unsetReq() {
+      this.req = null;
+    }
+
+    /** Returns true if field req is set (has been assigned a value) and false otherwise */
+    public boolean isSetReq() {
+      return this.req != null;
+    }
+
+    public void setReqIsSet(boolean value) {
+      if (!value) {
+        this.req = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case REQ:
+        if (value == null) {
+          unsetReq();
+        } else {
+          setReq((BulkFindNearestEdgesRequest)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case REQ:
+        return getReq();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case REQ:
+        return isSetReq();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof BulkFindNearestEdges_args)
+        return this.equals((BulkFindNearestEdges_args)that);
+      return false;
+    }
+
+    public boolean equals(BulkFindNearestEdges_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_req = true && this.isSetReq();
+      boolean that_present_req = true && that.isSetReq();
+      if (this_present_req || that_present_req) {
+        if (!(this_present_req && that_present_req))
+          return false;
+        if (!this.req.equals(that.req))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(BulkFindNearestEdges_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      BulkFindNearestEdges_args typedOther = (BulkFindNearestEdges_args)other;
+
+      lastComparison = Boolean.valueOf(isSetReq()).compareTo(typedOther.isSetReq());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetReq()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.req, typedOther.req);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("BulkFindNearestEdges_args(");
+      boolean first = true;
+
+      sb.append("req:");
+      if (this.req == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.req);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class BulkFindNearestEdges_argsStandardSchemeFactory implements SchemeFactory {
+      public BulkFindNearestEdges_argsStandardScheme getScheme() {
+        return new BulkFindNearestEdges_argsStandardScheme();
+      }
+    }
+
+    private static class BulkFindNearestEdges_argsStandardScheme extends StandardScheme<BulkFindNearestEdges_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, BulkFindNearestEdges_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // REQ
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.req = new BulkFindNearestEdgesRequest();
+                struct.req.read(iprot);
+                struct.setReqIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, BulkFindNearestEdges_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.req != null) {
+          oprot.writeFieldBegin(REQ_FIELD_DESC);
+          struct.req.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class BulkFindNearestEdges_argsTupleSchemeFactory implements SchemeFactory {
+      public BulkFindNearestEdges_argsTupleScheme getScheme() {
+        return new BulkFindNearestEdges_argsTupleScheme();
+      }
+    }
+
+    private static class BulkFindNearestEdges_argsTupleScheme extends TupleScheme<BulkFindNearestEdges_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, BulkFindNearestEdges_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetReq()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetReq()) {
+          struct.req.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, BulkFindNearestEdges_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.req = new BulkFindNearestEdgesRequest();
+          struct.req.read(iprot);
+          struct.setReqIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class BulkFindNearestEdges_result implements org.apache.thrift.TBase<BulkFindNearestEdges_result, BulkFindNearestEdges_result._Fields>, java.io.Serializable, Cloneable   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("BulkFindNearestEdges_result");
+
+    private static final org.apache.thrift.protocol.TField SUCCESS_FIELD_DESC = new org.apache.thrift.protocol.TField("success", org.apache.thrift.protocol.TType.STRUCT, (short)0);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new BulkFindNearestEdges_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new BulkFindNearestEdges_resultTupleSchemeFactory());
+    }
+
+    private BulkFindNearestEdgesResponse success; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      SUCCESS((short)0, "success");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 0: // SUCCESS
+            return SUCCESS;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, BulkFindNearestEdgesResponse.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(BulkFindNearestEdges_result.class, metaDataMap);
+    }
+
+    public BulkFindNearestEdges_result() {
+    }
+
+    public BulkFindNearestEdges_result(
+      BulkFindNearestEdgesResponse success)
+    {
+      this();
+      this.success = success;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public BulkFindNearestEdges_result(BulkFindNearestEdges_result other) {
+      if (other.isSetSuccess()) {
+        this.success = new BulkFindNearestEdgesResponse(other.success);
+      }
+    }
+
+    public BulkFindNearestEdges_result deepCopy() {
+      return new BulkFindNearestEdges_result(this);
+    }
+
+    @Override
+    public void clear() {
+      this.success = null;
+    }
+
+    public BulkFindNearestEdgesResponse getSuccess() {
+      return this.success;
+    }
+
+    public void setSuccess(BulkFindNearestEdgesResponse success) {
+      this.success = success;
+    }
+
+    public void unsetSuccess() {
+      this.success = null;
+    }
+
+    /** Returns true if field success is set (has been assigned a value) and false otherwise */
+    public boolean isSetSuccess() {
+      return this.success != null;
+    }
+
+    public void setSuccessIsSet(boolean value) {
+      if (!value) {
+        this.success = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case SUCCESS:
+        if (value == null) {
+          unsetSuccess();
+        } else {
+          setSuccess((BulkFindNearestEdgesResponse)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case SUCCESS:
+        return getSuccess();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case SUCCESS:
+        return isSetSuccess();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof BulkFindNearestEdges_result)
+        return this.equals((BulkFindNearestEdges_result)that);
+      return false;
+    }
+
+    public boolean equals(BulkFindNearestEdges_result that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_success = true && this.isSetSuccess();
+      boolean that_present_success = true && that.isSetSuccess();
+      if (this_present_success || that_present_success) {
+        if (!(this_present_success && that_present_success))
+          return false;
+        if (!this.success.equals(that.success))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    public int compareTo(BulkFindNearestEdges_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+      BulkFindNearestEdges_result typedOther = (BulkFindNearestEdges_result)other;
+
+      lastComparison = Boolean.valueOf(isSetSuccess()).compareTo(typedOther.isSetSuccess());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetSuccess()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.success, typedOther.success);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("BulkFindNearestEdges_result(");
+      boolean first = true;
+
+      sb.append("success:");
+      if (this.success == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.success);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class BulkFindNearestEdges_resultStandardSchemeFactory implements SchemeFactory {
+      public BulkFindNearestEdges_resultStandardScheme getScheme() {
+        return new BulkFindNearestEdges_resultStandardScheme();
+      }
+    }
+
+    private static class BulkFindNearestEdges_resultStandardScheme extends StandardScheme<BulkFindNearestEdges_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, BulkFindNearestEdges_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 0: // SUCCESS
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.success = new BulkFindNearestEdgesResponse();
+                struct.success.read(iprot);
+                struct.setSuccessIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, BulkFindNearestEdges_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.success != null) {
+          oprot.writeFieldBegin(SUCCESS_FIELD_DESC);
+          struct.success.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class BulkFindNearestEdges_resultTupleSchemeFactory implements SchemeFactory {
+      public BulkFindNearestEdges_resultTupleScheme getScheme() {
+        return new BulkFindNearestEdges_resultTupleScheme();
+      }
+    }
+
+    private static class BulkFindNearestEdges_resultTupleScheme extends TupleScheme<BulkFindNearestEdges_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, BulkFindNearestEdges_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetSuccess()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetSuccess()) {
+          struct.success.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, BulkFindNearestEdges_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.success = new BulkFindNearestEdgesResponse();
           struct.success.read(iprot);
           struct.setSuccessIsSet(true);
         }

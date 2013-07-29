@@ -25,8 +25,10 @@ import java.util.ListIterator;
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.opentripplanner.common.geometry.DistanceLibrary;
 import org.opentripplanner.common.geometry.GeometryUtils;
+import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.common.model.P2;
 import org.opentripplanner.routing.core.RoutingRequest;
+import org.opentripplanner.routing.core.TraversalRequirements;
 import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.core.TraverseModeSet;
 import org.opentripplanner.routing.edgetype.AreaEdge;
@@ -37,7 +39,6 @@ import org.opentripplanner.routing.edgetype.StreetTransitLink;
 import org.opentripplanner.routing.graph.Edge;
 import org.opentripplanner.routing.graph.Vertex;
 import org.opentripplanner.routing.impl.CandidateEdgeBundle;
-import org.opentripplanner.routing.location.StreetLocation;
 import org.opentripplanner.routing.vertextype.BikeRentalStationVertex;
 import org.opentripplanner.routing.vertextype.IntersectionVertex;
 import org.opentripplanner.routing.vertextype.StreetVertex;
@@ -55,7 +56,7 @@ import com.vividsolutions.jts.geom.Point;
  */
 public class LinkRequest {
 
-    private static Logger _log = LoggerFactory.getLogger(LinkRequest.class);
+    private static Logger LOG = LoggerFactory.getLogger(LinkRequest.class);
 
     NetworkLinkerLibrary linker;
     
@@ -119,10 +120,12 @@ public class LinkRequest {
         Coordinate coordinate = v.getCoordinate();
 
         /* is there a bundle of edges nearby to use or split? */
-        CandidateEdgeBundle edges = linker.index.getClosestEdges(coordinate, options, null, nearbyRouteEdges, true);
+        GenericLocation location = new GenericLocation(coordinate);
+        TraversalRequirements reqs = new TraversalRequirements(options);
+        CandidateEdgeBundle edges = linker.index.getClosestEdges(location, reqs, null, nearbyRouteEdges, true);
         if (edges == null || edges.size() < 1) {
             // no edges were found nearby, or a bidirectional/loop bundle of edges was not identified
-            _log.debug("found too few edges: {} {}", v.getName(), v.getCoordinate());
+            LOG.debug("found too few edges: {} {}", v.getName(), v.getCoordinate());
             return null;
         }
         // if the bundle was caught endwise (T intersections and dead ends), 
@@ -223,11 +226,11 @@ public class LinkRequest {
             e2v1 = (StreetVertex) e2.getFromVertex();
             e2v2 = (StreetVertex) e2.getToVertex();
             LineString backGeometry = e2.getGeometry();
-            backGeometryPair = StreetLocation.splitGeometryAtPoint(backGeometry,
+            backGeometryPair = GeometryUtils.splitGeometryAtPoint(backGeometry,
                     coordinate);
         }
         
-        P2<LineString> forwardGeometryPair = StreetLocation.splitGeometryAtPoint(forwardGeometry,
+        P2<LineString> forwardGeometryPair = GeometryUtils.splitGeometryAtPoint(forwardGeometry,
                 coordinate);
 
         LineString toMidpoint = forwardGeometryPair.getFirst();

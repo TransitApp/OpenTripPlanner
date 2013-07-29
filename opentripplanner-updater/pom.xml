@@ -25,13 +25,11 @@
     </repositories>
 
     <dependencies>
-        <!-- 
         <dependency>
-            <groupId>org.zeromq</groupId>
-            <artifactId>jzmq</artifactId>
-            <version>1.0.0</version>
+            <groupId>org.jeromq</groupId>
+            <artifactId>jeromq</artifactId>
+            <version>0.2.0</version>
         </dependency>
-         -->
         <dependency>
 	        <groupId>org.projectlombok</groupId>
     	    <artifactId>lombok</artifactId>
@@ -45,10 +43,6 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>opentripplanner-utils</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -105,6 +99,11 @@
         	<artifactId>jackson-mapper-asl</artifactId>
         	<version>1.9.11</version>
         </dependency>
+        <!-- LOGGING -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>        
     </dependencies>
 
     <build>
