@@ -15,6 +15,8 @@ package org.opentripplanner.routing.spt;
 
 import java.util.LinkedList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Trip;
@@ -27,6 +29,8 @@ import org.opentripplanner.routing.graph.Vertex;
  * A shortest path on the graph.
  */
 public class GraphPath {
+    private static final Logger LOG = LoggerFactory.getLogger(GraphPath.class);
+	
     public LinkedList<State> states;
 
     public LinkedList<Edge> edges;
