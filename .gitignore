@@ -36,6 +36,7 @@ opentripplanner-webapp/src/main/webapp/js/otp-min.js
 gen-java/
 gen-javabean/
 gen-py/
+.metadata/
 .idea/
 .sonar
 _site/
