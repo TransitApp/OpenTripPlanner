@@ -40,7 +40,7 @@ public class PathComparator implements Comparator<GraphPath> {
     	double o2TimeDiff = 2.0 * time2;
     	
         if (compareStartTimes) {
-            return (int) (o2Weight * o2.getStartTime() - o1Weight * o1.getStartTime()) / 1000;
+        	return (int) (o2.getStartTime() - o1.getStartTime());
         } else {
             return (int) (o1Weight + o1TimeDiff - (o2Weight + o2TimeDiff)) / 1000;
         }
