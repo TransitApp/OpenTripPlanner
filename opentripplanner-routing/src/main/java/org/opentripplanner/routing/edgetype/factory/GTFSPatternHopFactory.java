@@ -1547,9 +1547,11 @@ public class GTFSPatternHopFactory {
 
                 Stop parentStop = _dao.getStopForId(parentStationId);
                 Vertex parentStopVertex = context.stopNodes.get(parentStop);
-
-                new FreeEdge(parentStopVertex, stopVertex);
-                new FreeEdge(stopVertex, parentStopVertex);
+                
+                if (stopVertex != null && parentStopVertex != null) {
+                    new FreeEdge(parentStopVertex, stopVertex);
+                    new FreeEdge(stopVertex, parentStopVertex);   
+                }
 
                 // Stops with location_type=2 (entrances as defined in the pathways.txt 
                 // proposal) have no arrive/depart vertices, hence the null checks.
