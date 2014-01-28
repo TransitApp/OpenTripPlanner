@@ -21,7 +21,7 @@
 		<property name="numItineraries" value="4"/>
 		<property name="maxTransfers" value="4"/>
 		<property name="walkSpeed" value="1.475232"/>
-		<property name="transferSlack" value="120"/>
+		<property name="transferSlack" value="20"/>
 		<property name="showIntermediateStops" value="true"/>
 	</bean>
 
