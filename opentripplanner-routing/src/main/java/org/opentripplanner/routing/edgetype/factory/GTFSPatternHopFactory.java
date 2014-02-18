@@ -334,7 +334,7 @@ public class GTFSPatternHopFactory {
 
     private static final DistanceLibrary distanceLibrary = SphericalDistanceLibrary.getInstance();
 
-    private double maxStopToShapeSnapDistance = 2000;
+    private double maxStopToShapeSnapDistance = 300;
 
     public GTFSPatternHopFactory(GtfsContext context) {
         this._dao = context.getDao();
@@ -605,6 +605,8 @@ public class GTFSPatternHopFactory {
             int maxSegmentIndex = -1;
             int index = -1;
             int minSegmentIndexForThisStop = -1;
+            
+            
             for (IndexedLineSegment segment : segments) {
                 index ++;
                 if (segment.index < minSegmentIndex) {
@@ -624,6 +626,8 @@ public class GTFSPatternHopFactory {
                     }
                 }
             }
+            
+            
             if (stopSegments.size() == 0) {
                 //no segments within 150m
                 //fall back to nearest segment
@@ -634,14 +638,14 @@ public class GTFSPatternHopFactory {
                 Collections.sort(stopSegments, new IndexedLineSegmentComparator(coord));
             }
 
-            for (int j = i - 1; j >= 0; j --) {
-                for (Iterator<IndexedLineSegment> it = possibleSegmentsForStop.get(j).iterator(); it.hasNext(); ) {
-                    IndexedLineSegment segment = it.next();
-                    if (segment.index > maxSegmentIndex) {
-                        it.remove();
-                    }
-                }
-            }
+//            for (int j = i - 1; j >= 0; j --) {
+//                for (Iterator<IndexedLineSegment> it = possibleSegmentsForStop.get(j).iterator(); it.hasNext(); ) {
+//                    IndexedLineSegment segment = it.next();
+//                    if (segment.index > maxSegmentIndex) {
+//                        it.remove();
+//                    }
+//                }
+//            }
             possibleSegmentsForStop.add(stopSegments);
         }
 
@@ -662,6 +666,9 @@ public class GTFSPatternHopFactory {
             }
             return;
         }
+        
+        LOG.warn("working shape");
+
 
         Iterator<LinearLocation> locationIt = locations.iterator();
         LinearLocation endLocation = locationIt.next();
