@@ -334,7 +334,7 @@ public class GTFSPatternHopFactory {
 
     private static final DistanceLibrary distanceLibrary = SphericalDistanceLibrary.getInstance();
 
-    private double maxStopToShapeSnapDistance = 150;
+    private double maxStopToShapeSnapDistance = 2000;
 
     public GTFSPatternHopFactory(GtfsContext context) {
         this._dao = context.getDao();
