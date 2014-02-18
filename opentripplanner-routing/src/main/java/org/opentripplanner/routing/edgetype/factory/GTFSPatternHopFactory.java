@@ -666,9 +666,6 @@ public class GTFSPatternHopFactory {
             }
             return;
         }
-        
-        LOG.warn("working shape");
-
 
         Iterator<LinearLocation> locationIt = locations.iterator();
         LinearLocation endLocation = locationIt.next();
