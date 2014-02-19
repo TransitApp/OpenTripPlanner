@@ -51,7 +51,7 @@ public class GtfsBundle {
 
     private int defaultStreetToStopTime;
 
-    private double maxStopToShapeSnapDistance = 300;
+    private double maxStopToShapeSnapDistance = 150;
 
     @Getter @Setter 
     private Boolean useCached = null; // null means use global default from GtfsGB || true
