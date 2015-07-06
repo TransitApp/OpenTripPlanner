@@ -163,7 +163,7 @@ public abstract class GraphPathToTripPlanConverter {
 
         fixupLegs(itinerary.legs, legsStates);
 
-        itinerary.duration = lastState.getElapsedTimeSeconds();
+        itinerary.duration = lastState.getElapsedTimeSeconds() * 1000;
         itinerary.startTime = makeCalendar(states[0]);
         itinerary.endTime = makeCalendar(lastState);
 
