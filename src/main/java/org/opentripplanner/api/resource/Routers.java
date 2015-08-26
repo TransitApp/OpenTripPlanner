@@ -173,11 +173,12 @@ public class Routers {
     @RolesAllowed({ "ROUTERS" })
     @PUT @Path("{routerId}") @Produces({ MediaType.TEXT_PLAIN })
     public Response putGraphId(@PathParam("routerId") String routerId,
-            @QueryParam("preEvict") @DefaultValue("true") boolean preEvict) {
+            @QueryParam("preEvict") @DefaultValue("true") boolean preEvict,
+            @QueryParam("force") @DefaultValue("false") boolean forced) {
         LOG.debug("Attempting to load graph '{}' from server's local filesystem.", routerId);
         GraphService graphService = otpServer.getGraphService();
         if (graphService.getRouterIds().contains(routerId)) {
-            boolean success = graphService.reloadGraph(routerId, preEvict, false);
+            boolean success = graphService.reloadGraph(routerId, preEvict, forced);
             if (success)
                 return Response.status(201).entity("graph already registered, reloaded.\n").build();
             else
