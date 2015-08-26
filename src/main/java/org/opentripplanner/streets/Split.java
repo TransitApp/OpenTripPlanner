@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Represents a potential split point along an existing edge, retaining some geometric calculation state so that
  * once the best candidate is found more detailed calculations can continue.
+ * TODO handle initial and final Splits on same edge (use straight-line distance)
  */
 public class Split {
 
@@ -24,9 +25,11 @@ public class Split {
     public double distSquared = Double.POSITIVE_INFINITY;
 
     // The following fields require more calculations and are only set once a best edge is found.
-    public int lengthBefore_mm = 0; // the accumulated distance along the edge geometry up to the split point
-    public int lengthAfter_mm = 0; // the accumulated distance along the edge geometry up to the split point
+    public int distance0_mm = 0; // the accumulated distance along the edge geometry up to the split point
+    public int distance1_mm = 0; // the accumulated distance along the edge geometry after the split point
     public int distance_mm = 0; // the distance from the search point to the split point on the street
+    public int vertex0; // the vertex at the beginning of the chosen edge
+    public int vertex1; // the vertex at the end of the chosen edge
 
     public void setFrom (Split other) {
         edge = other.edge;
@@ -42,8 +45,8 @@ public class Split {
      */
     public static Split find (double lat, double lon, double radiusMeters, StreetLayer streetLayer) {
         // NOTE THIS ENTIRE GEOMETRIC CALCULATION IS HAPPENING IN FIXED PRECISION INT DEGREES
-        int fLat = VertexStore.floatingDegreesToFixed(lat);
-        int fLon = VertexStore.floatingDegreesToFixed(lon);
+        int fixLat = VertexStore.floatingDegreesToFixed(lat);
+        int fixLon = VertexStore.floatingDegreesToFixed(lon);
 
         // We won't worry about the perpendicular walks yet.
         // Just insert or find a vertex on the nearest road and return that vertex.
@@ -52,7 +55,7 @@ public class Split {
         double cosLat = FastMath.cos(FastMath.toRadians(lat)); // The projection factor, Earth is a "sphere"
         double radiusFixedLat = VertexStore.floatingDegreesToFixed(radiusMeters / metersPerDegreeLat);
         double radiusFixedLon = radiusFixedLat / cosLat; // Expand the X search space, don't shrink it.
-        Envelope envelope = new Envelope(fLon, fLon, fLat, fLat);
+        Envelope envelope = new Envelope(fixLon, fixLon, fixLat, fixLat);
         envelope.expandBy(radiusFixedLon, radiusFixedLat);
         double squaredRadiusFixedLat = radiusFixedLat * radiusFixedLat; // May overflow, don't use an int
         EdgeStore.Edge edge = streetLayer.edgeStore.getCursor();
@@ -67,14 +70,14 @@ public class Split {
             edge.forEachSegment((seg, fLat0, fLon0, fLat1, fLon1) -> {
                 // Find the fraction along the current segment
                 curr.seg = seg;
-                curr.frac = GeometryUtils.segmentFraction(fLon0, fLat0, fLon1, fLat1, fLon, fLat, cosLat);
+                curr.frac = GeometryUtils.segmentFraction(fLon0, fLat0, fLon1, fLat1, fixLon, fixLat, cosLat);
                 // Project to get the closest point on the segment.
                 // Note: the fraction is scaleless, xScale is accounted for in the segmentFraction function.
                 curr.fLon = fLon0 + curr.frac * (fLon1 - fLon0);
                 curr.fLat = fLat0 + curr.frac * (fLat1 - fLat0);
                 // Find squared distance to edge (avoid taking root)
-                double dx = (curr.fLon - fLon) * cosLat;
-                double dy = (curr.fLat - fLat);
+                double dx = (curr.fLon - fixLon) * cosLat;
+                double dy = (curr.fLat - fixLat);
                 curr.distSquared = dx * dx + dy * dy;
                 // Ignore segments that are too far away (filter false positives).
                 // Replace the best segment if we've found something closer.
@@ -88,12 +91,14 @@ public class Split {
             // No edge found nearby.
             return null;
         }
-        edge.seek(best.edge);
 
         // We found an edge. Iterate over its segments again, accumulating distances along its geometry.
         // The distance calculations involve square roots so are deferred to happen here, only on the selected edge.
         // TODO accumulate before/after geoms. Split point can be passed over since it's not an intermediate.
         // The length is are stored in one-element array to dodge Java's "effectively final" BS.
+        edge.seek(best.edge);
+        best.vertex0 = edge.getFromVertex();
+        best.vertex1 = edge.getToVertex();
         double[] lengthBefore_fixedDeg = new double[1];
         edge.forEachSegment((seg, fLat0, fLon0, fLat1, fLon1) -> {
             // Sum lengths only up to the split point.
@@ -110,19 +115,19 @@ public class Split {
         });
         // Convert the fixed-precision degree measurements into (milli)meters
         double lengthBefore_floatDeg = VertexStore.fixedDegreesToFloating((int)lengthBefore_fixedDeg[0]);
-        best.lengthBefore_mm = (int)(lengthBefore_floatDeg * metersPerDegreeLat * 1000);
+        best.distance0_mm = (int)(lengthBefore_floatDeg * metersPerDegreeLat * 1000);
         // FIXME perhaps we should be using the sphericalDistanceLibrary here, or the other way around.
         // The initial edge lengths are set using that library on OSM node coordinates, and they are slightly different.
         // We are using a single cosLat value at the linking point, instead of a different value at each segment.
-        if (best.lengthBefore_mm < 0) {
-            best.lengthBefore_mm = 0;
+        if (best.distance0_mm < 0) {
+            best.distance0_mm = 0;
             LOG.error("Length of first street segment was not positive.");
         }
-        if (best.lengthBefore_mm > edge.getLengthMm()) {
-            best.lengthBefore_mm = edge.getLengthMm();
+        if (best.distance0_mm > edge.getLengthMm()) {
+            best.distance0_mm = edge.getLengthMm();
             LOG.error("Length of first street segment was greater than the whole edge.");
         }
-        best.lengthAfter_mm = edge.getLengthMm() - best.lengthBefore_mm;
+        best.distance1_mm = edge.getLengthMm() - best.distance0_mm;
         return best;
     }
 }
