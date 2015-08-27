@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec java -Xmx64G -jar `dirname $0`/target/otp.jar --server --autoScan --port 9090 --securePort 9091 --basePath /var/otp-v2
