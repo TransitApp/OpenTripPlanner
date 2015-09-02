@@ -82,6 +82,9 @@ public class TNRepeatedRaptorProfileRouter {
      */
     public TNRepeatedRaptorProfileRouter(TransportNetwork network, AnalystClusterRequest clusterRequest,
                                          LinkedPointSet targets, TaskStatistics ts) {
+        if (network.streetLayer != targets.streetLayer) {
+            LOG.error("Transit network and target point set are not linked to the same street layer.");
+        }
         this.clusterRequest = clusterRequest;
         this.network = network;
         this.targets = targets;
@@ -153,7 +156,7 @@ public class TNRepeatedRaptorProfileRouter {
 
         // Turn the results of the search into isochrone geometries or accessibility data as requested.
         long resultSetStart = System.currentTimeMillis();
-        ResultEnvelope envelope = new ResultEnvelope();
+        ResultEnvelope envelope;
         if (isochrone) {
             // No destination point set was provided and we're just making isochrones based on travel time to vertices,
             // rather than finding access times to a set of user-specified points.

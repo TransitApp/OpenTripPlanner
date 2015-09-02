@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -40,11 +41,23 @@ public class EdgeStore implements Serializable {
     private VertexStore vertexStore;
 
     int nEdges = 0;
+
+    /** Flags for this edge.  One entry for each forward and each backward edge. */
     protected TIntList flags;
+
+    /** Speed for this edge.  One entry for each forward and each backward edge. */
     protected TIntList speeds;
+
+    /** From vertices. One entry for each edge pair */
     protected TIntList fromVertices;
+
+    /** To vertices. One entry for each edge pair */
     protected TIntList toVertices;
+
+    /** Length (millimeters). One entry for each edge pair */
     protected TIntList lengths_mm;
+
+    /** Geometries. One entry for each edge pair */
     protected List<int[]> geometries; // intermediate points along the edge, other than the intersection endpoints
 
     public EdgeStore (VertexStore vertexStore, int initialSize) {
@@ -58,6 +71,35 @@ public class EdgeStore implements Serializable {
         toVertices = new TIntArrayList(initialEdgePairs);
         geometries = new ArrayList<>(initialEdgePairs);
         lengths_mm = new TIntArrayList(initialEdgePairs);
+    }
+
+    /** Remove the specified edges from this edge store */
+    public void remove (int[] edgesToOmit) {
+        // be clever: sort the list descending, because removing an edge only affects the indices of
+        // edges that appear later in the graph.
+        Arrays.sort(edgesToOmit);
+
+        int prevEdge = -1;
+        for (int cursor = edgesToOmit.length - 1; cursor >= 0; cursor--) {
+            int edge = edgesToOmit[cursor] / 2;
+
+            if (edge == prevEdge)
+                continue; // ignore duplicates
+
+            prevEdge = edge;
+            // note using 2 int version because it is an offset not a value that we want to remove
+            // flags and speeds have separate entries for forward and backwards edges
+            flags.remove(edge * 2, 2);
+            speeds.remove(edge * 2, 2);
+
+            // everything else has a single entry for forward and backward edges
+            fromVertices.remove(edge, 1);
+            toVertices.remove(edge, 1);
+            lengths_mm.remove(edge, 1);
+            // this is not a TIntList
+            geometries.remove(edge);
+            nEdges -= 2;
+        }
     }
 
     // Maybe reserve the first 4-5 bits (or a whole byte, and 16 bits for flags) for mutually exclusive edge types.
@@ -137,6 +179,11 @@ public class EdgeStore implements Serializable {
 
         /** Jump to a specific edge number. */
         public void seek(int pos) {
+            if (pos < 0)
+                throw new ArrayIndexOutOfBoundsException("Attempt to seek to negative edge number");
+            if (pos >= nEdges)
+                throw new ArrayIndexOutOfBoundsException("Attempt to seek beyond end of edge store");
+
             edgeIndex = pos;
             // divide and multiply by two are fast bit shifts
             pairIndex = edgeIndex / 2;

@@ -6,8 +6,6 @@ import gnu.trove.list.array.TIntArrayList;
 import org.apache.commons.math3.util.FastMath;
 import org.opentripplanner.analyst.PointSet;
 import org.opentripplanner.analyst.ResultSet;
-import org.opentripplanner.analyst.SampleSet;
-import org.opentripplanner.analyst.TimeSurface;
 import org.opentripplanner.analyst.cluster.ResultEnvelope;
 import org.opentripplanner.analyst.core.IsochroneData;
 import org.opentripplanner.analyst.request.SampleGridRenderer.WTWD;
@@ -16,7 +14,6 @@ import org.opentripplanner.common.geometry.AccumulativeGridSampler;
 import org.opentripplanner.common.geometry.DelaunayIsolineBuilder;
 import org.opentripplanner.common.geometry.SparseMatrixZSampleGrid;
 import org.opentripplanner.common.geometry.SphericalDistanceLibrary;
-import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.routing.graph.Vertex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,9 +167,9 @@ public class TNPropagatedTimesStore {
      */
     public ResultEnvelope makeResults(PointSet pointSet, boolean includeTimes, boolean includeHistograms, boolean includeIsochrones) {
         ResultEnvelope envelope = new ResultEnvelope();
-        envelope.worstCase = new ResultSet(mins, pointSet, includeTimes, includeHistograms, includeIsochrones);
+        envelope.worstCase = new ResultSet(maxs, pointSet, includeTimes, includeHistograms, includeIsochrones);
         envelope.avgCase   = new ResultSet(avgs, pointSet, includeTimes, includeHistograms, includeIsochrones);
-        envelope.bestCase  = new ResultSet(maxs, pointSet, includeTimes, includeHistograms, includeIsochrones);
+        envelope.bestCase  = new ResultSet(mins, pointSet, includeTimes, includeHistograms, includeIsochrones);
         return envelope;
     }
 
@@ -183,9 +180,9 @@ public class TNPropagatedTimesStore {
      */
     public ResultEnvelope makeIsochronesForVertices () {
         ResultEnvelope envelope = new ResultEnvelope();
-        envelope.worstCase = makeIsochroneForVertices(mins);
+        envelope.worstCase = makeIsochroneForVertices(maxs);
         envelope.avgCase = makeIsochroneForVertices(avgs);
-        envelope.bestCase = makeIsochroneForVertices(maxs);
+        envelope.bestCase = makeIsochroneForVertices(mins);
         return envelope;
     }
 

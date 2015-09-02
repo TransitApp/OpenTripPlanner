@@ -6,19 +6,19 @@ import com.conveyal.osmlib.OSM;
 import com.conveyal.osmlib.Way;
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.TLongIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.map.hash.TLongIntHashMap;
+import gnu.trove.set.TIntSet;
+import gnu.trove.set.hash.TIntHashSet;
 import org.opentripplanner.common.geometry.SphericalDistanceLibrary;
 import org.opentripplanner.transit.TransitLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 /**
  * This stores the street layer of OTP routing data.
@@ -41,12 +41,22 @@ public class StreetLayer implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(StreetLayer.class);
 
+    /**
+     * Minimum allowable size (in number of vertices) for a disconnected subgraph; subgraphs smaller than these will be removed.
+     * There are several reasons why one might have a disconnected subgraph. The most common is poor quality
+     * OSM data. However, they also could be due to areas that really are disconnected in the street graph,
+     * and are connected only by transit. These could be literal islands (Vashon Island near Seattle comes
+     * to mind), or islands that are isolated by infrastructure (for example, airport terminals reachable
+     * only by transit or driving, for instance BWI or SFO).
+     */
+    public static final int MIN_SUBGRAPH_SIZE = 40;
+
     private static final int SNAP_RADIUS_MM = 5 * 1000;
 
     // Edge lists should be constructed after the fact from edges. This minimizes serialized size too.
     transient List<TIntList> outgoingEdges;
     transient List<TIntList> incomingEdges;
-    transient IntHashGrid spatialIndex = new IntHashGrid();
+    public transient IntHashGrid spatialIndex = new IntHashGrid();
 
     TLongIntMap vertexIndexForOsmNode = new TLongIntHashMap(100_000, 0.75f, -1, -1);
     // TIntLongMap osmWayForEdgeIndex;
@@ -65,14 +75,28 @@ public class StreetLayer implements Serializable {
 
     public TransitLayer linkedTransitLayer = null;
 
-    public void loadFromOsm (OSM osm) {
+    /** Load street layer from an OSM-lib OSM DB */
+    public void loadFromOsm(OSM osm) {
+        loadFromOsm(osm, true, false);
+    }
+
+    /** Load OSM, optionally removing floating subgraphs (recommended) */
+    void loadFromOsm (OSM osm, boolean removeIslands, boolean saveVertexIndex) {
+        if (!osm.intersectionDetection)
+            throw new IllegalArgumentException("Intersection detection not enabled on OSM source");
+
         LOG.info("Making street edges from OSM ways...");
         this.osm = osm;
         for (Map.Entry<Long, Way> entry : osm.ways.entrySet()) {
             Way way = entry.getValue();
-            if ( ! (way.hasTag("highway") || way.hasTag("area", "yes") || way.hasTag("public_transport", "platform"))) {
+            if ( ! (way.hasTag("highway") || way.hasTag("public_transport", "platform"))) {
                 continue;
             }
+
+            // don't allow users to use proposed infrastructure
+            if (way.hasTag("highway", "proposed"))
+                continue;
+
             int nEdgesCreated = 0;
             int beginIdx = 0;
             // Break each OSM way into topological segments between intersections, and make one edge per segment.
@@ -87,10 +111,16 @@ public class StreetLayer implements Serializable {
         }
         LOG.info("Done making street edges.");
         LOG.info("Made {} vertices and {} edges.", vertexStore.nVertices, edgeStore.nEdges);
+
+        if (removeIslands)
+            removeDisconnectedSubgraphs(MIN_SUBGRAPH_SIZE);
+
         edgesPerWayHistogram.display();
         pointsPerEdgeHistogram.display();
-        // Clear unneeded indexes
-        vertexIndexForOsmNode = null;
+        // Clear unneeded indexes, allow them to be gc'ed
+        if (!saveVertexIndex)
+            vertexIndexForOsmNode = null;
+
         osm = null;
     }
 
@@ -323,5 +353,80 @@ public class StreetLayer implements Serializable {
         return vertexStore.nVertices;
     }
 
+    /**
+     * Find and remove all subgraphs with fewer than minSubgraphSize vertices. Uses a flood fill
+     * algorithm, see http://stackoverflow.com/questions/1348783.
+     */
+    public void removeDisconnectedSubgraphs(int minSubgraphSize) {
+        LOG.info("Removing subgraphs with fewer than {} vertices");
+        boolean edgeListsBuilt = incomingEdges != null;
 
+        if (!edgeListsBuilt)
+            buildEdgeLists();
+
+        // labels for the flood fill algorithm
+        TIntIntMap vertexLabels = new TIntIntHashMap();
+
+        // vertices and edges that should be removed
+        TIntSet verticesToRemove = new TIntHashSet();
+        TIntSet edgesToRemove = new TIntHashSet();
+
+        for (int vertex = 0; vertex < vertexStore.nVertices; vertex++) {
+            // N.B. this is not actually running a search for every vertex as after the first few
+            // almost all of the vertices are labeled
+            if (vertexLabels.containsKey(vertex))
+                continue;
+
+            StreetRouter r = new StreetRouter(this);
+            r.setOrigin(vertex);
+            // walk to the end of the graph
+            r.distanceLimitMeters = 100000;
+            r.route();
+
+            TIntList reachedVertices = new TIntArrayList();
+
+            int nReached = 0;
+            for (int reachedVertex = 0; reachedVertex < vertexStore.nVertices; reachedVertex++) {
+                if (r.getTravelTimeToVertex(reachedVertex) != Integer.MAX_VALUE) {
+                    nReached++;
+                    // use source vertex as label, saves a variable
+                    vertexLabels.put(reachedVertex, vertex);
+                    reachedVertices.add(reachedVertex);
+                }
+            }
+
+            if (nReached < minSubgraphSize) {
+                LOG.info("Removing disconnected subgraph of size {} near {}, {}",
+                        nReached, vertexStore.fixedLats.get(vertex) / VertexStore.FIXED_FACTOR,
+                        vertexStore.fixedLons.get(vertex) / VertexStore.FIXED_FACTOR);
+                verticesToRemove.addAll(reachedVertices);
+                reachedVertices.forEach(v -> {
+                    // can't use method reference here because we always have to return true
+                    incomingEdges.get(v).forEach(e -> {
+                        edgesToRemove.add(e);
+                        return true; // continue iteration
+                    });
+                    outgoingEdges.get(v).forEach(e -> {
+                        edgesToRemove.add(e);
+                        return true; // continue iteration
+                    });
+                    return true; // iteration should continue
+                });
+            }
+        }
+
+        // rebuild the edge store with some edges removed
+        edgeStore.remove(edgesToRemove.toArray());
+        // TODO remove vertices as well? this is messy because the edges point into them
+
+        // don't forget this
+        if (edgeListsBuilt)
+            buildEdgeLists();
+        else {
+            incomingEdges = null;
+            outgoingEdges = null;
+        }
+
+        LOG.info("Done removing subgraphs. {} edges remain", edgeStore.nEdges);
+    }
 }
