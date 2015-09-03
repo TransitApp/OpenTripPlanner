@@ -25,6 +25,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.opentripplanner.api.parameter.QualifiedModeSet;
+import org.opentripplanner.api.transitapp.Network;
 import org.opentripplanner.routing.core.OptimizeType;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.request.BannedStopSet;
@@ -347,6 +348,18 @@ public abstract class RoutingResource {
     @QueryParam("disableRemainingWeightHeuristic")
     protected Boolean disableRemainingWeightHeuristic;
     
+    /**
+     * Comma separated list of disabled networks
+     */
+    @QueryParam("disabledNetworks")
+    protected String disabledNetworks;
+    
+    /**
+     * Comma separated list of enabled networks
+     */
+    @QueryParam("enabledNetworks")
+    protected String enabledNetworks;
+    
     /* 
      * somewhat ugly bug fix: the graphService is only needed here for fetching per-graph time zones. 
      * this should ideally be done when setting the routing context, but at present departure/
@@ -561,6 +574,12 @@ public abstract class RoutingResource {
 
         if (disableRemainingWeightHeuristic != null)
             request.disableRemainingWeightHeuristic = disableRemainingWeightHeuristic;
+        
+        if (disabledNetworks != null) 
+        	request.disabledNetworks = Network.parse(disabledNetworks);
+        
+        if (enabledNetworks != null) 
+        	request.enabledNetworks = Network.parse(enabledNetworks);
 
         //getLocale function returns defaultLocale if locale is null
         request.locale = ResourceBundleSingleton.INSTANCE.getLocale(locale);

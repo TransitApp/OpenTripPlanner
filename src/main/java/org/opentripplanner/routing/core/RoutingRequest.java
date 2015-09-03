@@ -18,6 +18,7 @@ import org.onebusaway.gtfs.model.AgencyAndId;
 import org.onebusaway.gtfs.model.Route;
 import org.onebusaway.gtfs.model.Trip;
 import org.opentripplanner.api.parameter.QualifiedModeSet;
+import org.opentripplanner.api.transitapp.Network;
 import org.opentripplanner.common.MavenVersion;
 import org.opentripplanner.common.model.GenericLocation;
 import org.opentripplanner.common.model.NamedPlace;
@@ -262,6 +263,10 @@ public class RoutingRequest implements Cloneable, Serializable {
     
     /** Set of unpreferred agencies for given user. */
     public HashSet<String> unpreferredAgencies = new HashSet<String>();
+    
+    /** Set of disabled networks by the user */
+    public HashSet<String> disabledNetworks = new HashSet<String>();
+    public HashSet<String> enabledNetworks = new HashSet<String>();
 
     /**
      * Penalty added for using every unpreferred route. We return number of seconds that we are willing to wait for preferred route.

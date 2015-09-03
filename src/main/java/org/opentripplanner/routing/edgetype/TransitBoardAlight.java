@@ -14,10 +14,13 @@
 package org.opentripplanner.routing.edgetype;
 
 import java.util.BitSet;
-
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
+
 import org.onebusaway.gtfs.model.Stop;
 import org.onebusaway.gtfs.model.Trip;
+import org.opentripplanner.api.transitapp.NetworkUtility;
 import org.opentripplanner.routing.core.RoutingContext;
 import org.opentripplanner.routing.core.RoutingRequest;
 import org.opentripplanner.routing.core.ServiceDay;
@@ -225,6 +228,20 @@ public class TransitBoardAlight extends TablePatternEdge implements OnboardEdge 
             if (options.bannedRoutes != null && options.bannedRoutes.matches(getPattern().route)) {
                 // TODO: remove route checks in/after the trip search
                 return null;
+            }
+            
+            NetworkUtility networkUtility = NetworkUtility.getInstance();
+            Set<String> networks = networkUtility.networksForRouteId(getPattern().route.getId().getId());
+            Set<String> disabledIntersection = new HashSet<String>(options.disabledNetworks);
+            disabledIntersection.retainAll(networks);
+            if (!disabledIntersection.isEmpty()) {
+            	return null;
+            }
+            for (String network : networks) {
+            	if (!networkUtility.networkEnabledByDefault(network) &&
+            			!options.enabledNetworks.contains(network)) {
+            		return null;
+            	}
             }
             
             /*
