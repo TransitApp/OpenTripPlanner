@@ -11,18 +11,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.opentripplanner.util.HttpUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import ch.qos.logback.core.rolling.helper.IntegerTokenConverter;
+
 public enum NetworkUtility {
     INSTANCE;
 	
-	private Map<String, ArrayList<Object>> networkMap;
-	private Map<Integer, Set<String>> routeMap;
-	private Lock lock;
+	private Map<String, ArrayList<Object>> networkMap = new HashMap<String, ArrayList<Object>>();
+	private Map<Integer, Set<String>> routeMap = new HashMap<Integer, Set<String>>();
+	private final Lock lock = new ReentrantLock();
 
     NetworkUtility() {
     	ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -43,7 +46,7 @@ public enum NetworkUtility {
     
     public Set<String> networksForRouteId(String routeId) {
     	lock.lock();
-    	Set<String> networks = routeMap.get(routeId);
+    	Set<String> networks = routeMap.get(Integer.parseInt(routeId));
     	lock.unlock();
     	return networks;
     }
@@ -68,10 +71,16 @@ public enum NetworkUtility {
 		    	Map<String, ArrayList<Object>> newNetworkMap = mapper.convertValue(rootNode, Map.class);
 		    	
 		    	Map<Integer, Set<String>> newRouteMap = new HashMap<Integer, Set<String>>();
-		    	for (String networkKey : networkMap.keySet()) {
-		    		ArrayList<Integer> routeIds = (ArrayList<Integer>)networkMap.get(networkKey).get(1);
+		    	for (String networkKey : newNetworkMap.keySet()) {
+		    		ArrayList<Integer> routeIds = (ArrayList<Integer>)newNetworkMap.get(networkKey).get(1);
+		    		
 					for (Integer routeId : routeIds) {
-		    			newRouteMap.get(routeId).add(networkKey);
+		    			Set<String> networks = newRouteMap.get(routeId);
+		    			if (networks == null) {
+		    				networks = new HashSet<String>();
+		    				newRouteMap.put(routeId, networks);
+		    			}
+		    			networks.add(networkKey);
 		    		}
 		    	}
 		    	

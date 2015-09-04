@@ -230,20 +230,27 @@ public class TransitBoardAlight extends TablePatternEdge implements OnboardEdge 
                 return null;
             }
             
+            
             NetworkUtility networkUtility = NetworkUtility.getInstance();
             Set<String> networks = networkUtility.networksForRouteId(getPattern().route.getId().getId());
-            Set<String> disabledIntersection = new HashSet<String>(options.disabledNetworks);
-            disabledIntersection.retainAll(networks);
-            if (!disabledIntersection.isEmpty()) {
-            	return null;
-            }
-            for (String network : networks) {
-            	if (!networkUtility.networkEnabledByDefault(network) &&
-            			!options.enabledNetworks.contains(network)) {
-            		return null;
-            	}
-            }
             
+            if (networks != null) {
+                if (options.disabledNetworks != null) {
+                    Set<String> disabledIntersection = new HashSet<String>(options.disabledNetworks);
+                    disabledIntersection.retainAll(networks);
+                    if (!disabledIntersection.isEmpty()) {
+                    	return null;
+                    }
+                }
+            	
+                for (String network : networks) {
+                	if (!networkUtility.networkEnabledByDefault(network) &&
+                			(!options.enabledNetworks.contains(network) || options.enabledNetworks == null)) {
+                		return null;
+                	}
+                }
+            }
+
             /*
              * Find the next boarding/alighting time relative to the current State. Check lists of
              * transit serviceIds running yesterday, today, and tomorrow relative to the initial
