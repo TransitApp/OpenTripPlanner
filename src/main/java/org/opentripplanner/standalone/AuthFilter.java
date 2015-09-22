@@ -34,7 +34,7 @@ public class AuthFilter implements ContainerRequestFilter {
 
     /* Case-sensitive. */
     public AuthFilter() {
-        passwords.put("Transit", "846eifwVdHwBxnFHK74WrKeuYRz9TvUQjmm");
+        passwords.put("ROUTERS", "846eifwVdHwBxnFHK74WrKeuYRz9TvUQjmm");
     }
 
     /* Throw an exception if a user is unauthenticated. requestContext.abortWith()? */
