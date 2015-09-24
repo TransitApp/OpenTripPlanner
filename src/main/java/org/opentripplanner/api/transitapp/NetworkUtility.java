@@ -46,7 +46,12 @@ public enum NetworkUtility {
     
     public Set<String> networksForRouteId(String routeId) {
     	lock.lock();
-    	Set<String> networks = routeMap.get(Integer.parseInt(routeId));
+    	Set<String> networks = new HashSet<String>();
+    	try {
+        	networks = routeMap.get(Integer.parseInt(routeId));
+		} catch (NumberFormatException format) {
+			//We don't have a number route_id, this is not from Transit
+		}
     	lock.unlock();
     	return networks;
     }
@@ -61,7 +66,7 @@ public enum NetworkUtility {
     @SuppressWarnings("unchecked")
 	private void updateNetworkDefinition() {
     	try {
-			InputStream stream = HttpUtils.getData("http://staging.transitapp.com/v3/admin/networks?format=json");
+			InputStream stream = HttpUtils.getData("http://api.transitapp.com/v3/admin/networks?format=json");
 			String jsonString = convertStreamToString(stream);
 			
 		    ObjectMapper mapper = new ObjectMapper();
