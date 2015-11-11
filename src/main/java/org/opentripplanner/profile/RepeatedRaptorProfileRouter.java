@@ -181,7 +181,7 @@ public class RepeatedRaptorProfileRouter {
             ts.initialStopCount = transitStopAccessTimes.size();
         } else {
             // Nontransit case: skip transit routing and make a propagated times store based on only one row.
-            propagatedTimesStore = new PropagatedTimesStore(graph, nonTransitTimes.length);
+            propagatedTimesStore = new PropagatedTimesStore(graph, request, nonTransitTimes.length);
             int[][] singleRoundResults = new int[1][];
             singleRoundResults[0] = nonTransitTimes;
             propagatedTimesStore.setFromArray(singleRoundResults,
@@ -241,7 +241,7 @@ public class RepeatedRaptorProfileRouter {
         if (data == null) {
             // Non-transit mode. Search out to the full 120 minutes.
             // Should really use directModes.
-            rr.worstTime = rr.dateTime + 120 * 60;
+            rr.worstTime = rr.dateTime + RaptorWorker.MAX_DURATION;
             rr.dominanceFunction = new DominanceFunction.EarliestArrival();
         } else {
             // Transit mode, limit pre-transit travel.

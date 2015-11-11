@@ -33,6 +33,19 @@ public class RaptorWorker {
 
     private static final Logger LOG = LoggerFactory.getLogger(RaptorWorker.class);
     public static final int UNREACHED = Integer.MAX_VALUE;
+
+    /**
+     * Destinations with travel time above this threshold are considered unreachable. Note that this will cut off half of the
+     * trips to a particular location if half the time it takes less than the cutoff and half the time more. Use in combination
+     * with the reachability threshold in ProfileRequest to get desired results.
+     *
+     * The fact that there are edge effects here implies a problem with our methodology. We should be taking the approach that
+     * the Accessibility Observatory has taken in which accessibility (rather than travel time) is calculated at each minute.
+     * Alternatively, we could calculate the full OD matrix for each minute and save that to determine whether a particular destination
+     * is reachable in less than x minutes on median for any arbitrary cutoff.
+     *
+     * This should be a number beyond which people would generally consider transit to be completely unreasonable.
+     */
     static final int MAX_DURATION = 120 * 60;
 
     /**
@@ -140,7 +153,7 @@ public class RaptorWorker {
             initialStops.put(stopIndex, accessTime);
         }
 
-        PropagatedTimesStore propagatedTimesStore = new PropagatedTimesStore(graph, data.nTargets);
+        PropagatedTimesStore propagatedTimesStore = new PropagatedTimesStore(graph, this.req, data.nTargets);
 
         // optimization: if no schedules, only run Monte Carlo
         int fromTime = req.fromTime;
