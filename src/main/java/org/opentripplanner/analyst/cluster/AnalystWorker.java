@@ -5,6 +5,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.conveyal.geojson.GeoJsonModule;
+import com.conveyal.r5.R5Main;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -50,6 +51,8 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
@@ -157,6 +160,9 @@ public class AnalystWorker implements Runnable {
     private ThreadPoolExecutor highPriorityExecutor, batchExecutor;
 
     public AnalystWorker(Properties config) {
+        // print out date on startup so that CloudWatch logs has a unique fingerprint
+        LOG.info("Analyst worker starting at {}", LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+
         // parse the configuration
         // set up the stats store
         String statsQueue = config.getProperty("statistics-queue");
@@ -635,15 +641,18 @@ public class AnalystWorker implements Runnable {
             return;
         }
 
-        try {
-            // jump over to using TransportNetworks if requested
-            if (Boolean.parseBoolean(config.getProperty("use-transport-networks", "false")))
-                new TNAnalystWorker(config).run();
-            else
+        if (Boolean.parseBoolean(config.getProperty("use-transport-networks", "false"))) {
+            // start R5 to work with transport networks
+            LOG.info("Transport network support enabled, deferring computation to R5");
+            com.conveyal.r5.analyst.cluster.AnalystWorker.main(args);
+        }
+        else {
+            try {
                 new AnalystWorker(config).run();
-        } catch (Exception e) {
-            LOG.error("Error in analyst worker", e);
-            return;
+            } catch (Exception e) {
+                LOG.error("Error in analyst worker", e);
+                return;
+            }
         }
     }
 

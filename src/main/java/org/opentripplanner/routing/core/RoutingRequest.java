@@ -222,8 +222,8 @@ public class RoutingRequest implements Cloneable, Serializable {
      */
     public double waitReluctance = 1.0;
 
-    /** How much less bad is waiting at the beginning of the trip (replaces waitReluctance) */
-    public double waitAtBeginningFactor = 0.9;
+    /** How much less bad is waiting at the beginning of the trip (replaces waitReluctance on the first boarding) */
+    public double waitAtBeginningFactor = 0.4;
 
     /** This prevents unnecessary transfers by adding a cost for boarding a vehicle. */
     public int walkBoardCost = 60 * 10;
@@ -385,8 +385,6 @@ public class RoutingRequest implements Cloneable, Serializable {
     public AgencyAndId startingTransitTripId;
 
     public boolean walkingBike;
-
-    public double heuristicWeight = 1.0; // FIXME what is this for?
 
     public boolean softWalkLimiting = true;
     public boolean softPreTransitLimiting = true;
@@ -1033,7 +1031,23 @@ public class RoutingRequest implements Cloneable, Serializable {
             return walkBoardCost;
         return bikeBoardCost;
     }
-    
+
+    /**
+     * @return The time it actually takes to board a vehicle. Could be significant eg. on airplanes and ferries
+     */
+    public int getBoardTime(TraverseMode transitMode) {
+        Integer i = this.rctx.graph.boardTimes.get(transitMode);
+        return i == null ? 0 : i;
+    }
+
+    /**
+     * @return The time it actually takes to alight a vehicle. Could be significant eg. on airplanes and ferries
+     */
+    public int getAlightTime(TraverseMode transitMode) {
+        Integer i = this.rctx.graph.alightTimes.get(transitMode);
+        return i == null ? 0 : i;
+    }
+
     private String getRouteOrAgencyStr(HashSet<String> strings) {
         StringBuilder builder = new StringBuilder();
         for (String agency : strings) {
@@ -1092,7 +1106,7 @@ public class RoutingRequest implements Cloneable, Serializable {
     public boolean tripIsBanned(Trip trip) {
         /* check if agency is banned for this plan */
         if (bannedAgencies != null) {
-            if (bannedAgencies.contains(trip.getId().getAgencyId())) {
+            if (bannedAgencies.contains(trip.getRoute().getAgency().getId())) {
                 return true;
             }
         }

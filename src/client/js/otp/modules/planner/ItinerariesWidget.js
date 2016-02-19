@@ -322,6 +322,7 @@ otp.widgets.ItinerariesWidget =
         if(mode === "RAIL") return '#b00';
         if(mode === "BUS") return '#0f0';
         if(mode === "TRAM") return '#f00';
+        if(mode === "AIRPLANE") return '#f0f';
         return '#aaa';
     },
 
@@ -427,6 +428,13 @@ otp.widgets.ItinerariesWidget =
 
         // add alerts, if applicable
         alerts = alerts || [];
+
+        // create an alert if this is a different day from the searched day
+        var queryTime = itin.tripPlan.queryParams.date + ' ' + itin.tripPlan.queryParams.time;
+        if(itin.differentServiceDayFromQuery(itin.tripPlan.planData.date)) {
+            //TRANSLATORS: Shown as alert text before showing itinerary.
+            alerts = [ "This itinerary departs on a different day than the one searched for"];
+        }
 
         // check for max walk exceedance
         var maxWalkExceeded = false;
