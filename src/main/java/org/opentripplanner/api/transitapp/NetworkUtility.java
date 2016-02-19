@@ -18,8 +18,6 @@ import org.opentripplanner.util.HttpUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ch.qos.logback.core.rolling.helper.IntegerTokenConverter;
-
 public enum NetworkUtility {
     INSTANCE;
 	
