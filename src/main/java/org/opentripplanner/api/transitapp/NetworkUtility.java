@@ -66,7 +66,7 @@ public enum NetworkUtility {
     @SuppressWarnings("unchecked")
 	private void updateNetworkDefinition() {
     	try {
-			InputStream stream = HttpUtils.getData("http://staging.transitapp.com/v3/admin/networks?format=json");
+			InputStream stream = HttpUtils.getData("http://api.transitapp.com/v3/admin/networks?format=json");
 			String jsonString = convertStreamToString(stream);
 			
 		    ObjectMapper mapper = new ObjectMapper();
