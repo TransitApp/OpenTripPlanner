@@ -33,7 +33,8 @@ public class Router {
 
     public String id;
     public Graph graph;
-    public double[] timeouts = {5, 4, 2};
+    
+	public double[] timeouts = {5, 4, 2, 1.5, 1};
 
     /**
      *  Separate logger for incoming requests. This should be handled with a Logback logger rather than something
