@@ -776,7 +776,7 @@ public class Graph implements Serializable {
         LOG.info("OTP version:   {}", v);
         if (!v.equals(gv)) {
             LOG.error("This graph was built with a different version of OTP. Please rebuild it.");
-            return false; // do not allow graph use
+            return true; // do not allow graph use
         } else if (!v.commit.equals(gv.commit)) {
             if (v.qualifier.equals("SNAPSHOT")) {
                 LOG.warn("This graph was built with the same SNAPSHOT version of OTP, but a "
@@ -786,7 +786,7 @@ public class Graph implements Serializable {
             } else {
                 LOG.error("Commit mismatch in non-SNAPSHOT version. This implies a problem with "
                         + "the build or release process.");
-                return false; // major problem
+                return true; // major problem
             }
         } else {
             // no version mismatch, no commit mismatch
