@@ -249,8 +249,15 @@ public class TransitBoardAlight extends TablePatternEdge implements OnboardEdge 
                 }
             	
                 for (String network : networks) {
-                	if (!networkUtility.networkEnabledByDefault(network) &&
-                			(!options.enabledNetworks.contains(network) || options.enabledNetworks == null)) {
+                	boolean enabledByDefault = networkUtility.networkEnabledByDefault(network);
+                	boolean specificlyEnabled = options.enabledNetworks.contains(network);
+                	
+                	if (network.equals("(prévu pour 2020)|Montréal|115")) {
+                		LOG.warn(network + " is " + enabledByDefault + " by default");
+                		LOG.warn(network + " is " + specificlyEnabled + " specifically");
+                	}
+                	
+                	if (!enabledByDefault && !specificlyEnabled) {
                 		return null;
                 	}
                 }

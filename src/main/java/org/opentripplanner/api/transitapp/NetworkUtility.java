@@ -37,7 +37,7 @@ public enum NetworkUtility {
     	};
     	
     	//Run each 15 min
-    	executor.scheduleAtFixedRate(periodicTask, 0, 15, TimeUnit.MINUTES);
+    	executor.scheduleAtFixedRate(periodicTask, 0, 5, TimeUnit.MINUTES);
     }
 
     public static NetworkUtility getInstance() {
@@ -88,6 +88,8 @@ public enum NetworkUtility {
 		    			networks.add(networkKey);
 		    		}
 		    	}
+		    	
+		    	System.out.println("Updated network definition");
 		    	
 		    	lock.lock();
 		    	networkMap = newNetworkMap;
