@@ -17,6 +17,8 @@ public class RouteShort {
     public String mode;
     public String color;
     public String agencyName;
+    public String agencyId;
+    public String routeId;
 
     public RouteShort (Route route) {
         id = route.getId();
@@ -25,6 +27,8 @@ public class RouteShort {
         mode = GtfsLibrary.getTraverseMode(route).toString();
         color = route.getColor();
         agencyName = route.getAgency().getName();
+        agencyId = route.getAgency().getId();
+        routeId = route.getId().getId();
     }
 
     public static List<RouteShort> list (Collection<Route> in) {
