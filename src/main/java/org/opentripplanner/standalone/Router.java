@@ -1,5 +1,11 @@
 package org.opentripplanner.standalone;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.FileAppender;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.opentripplanner.analyst.request.*;
 import org.opentripplanner.analyst.scenario.ScenarioStore;
@@ -7,11 +13,13 @@ import org.opentripplanner.api.transitapp.NetworkUtility;
 import org.opentripplanner.inspector.TileRendererManager;
 import org.opentripplanner.reflect.ReflectiveInitializer;
 import org.opentripplanner.routing.core.RoutingRequest;
+import org.opentripplanner.routing.core.TraverseMode;
 import org.opentripplanner.routing.graph.Graph;
 import org.opentripplanner.updater.GraphUpdaterConfigurator;
 import org.opentripplanner.visualizer.GraphVisualizer;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.EnumMap;
 
 /**
  * Represents the configuration of a single router (a single graph for a specific geographic area)
@@ -19,13 +27,20 @@ import org.slf4j.LoggerFactory;
  */
 public class Router {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Router.class);
+    private static final Logger LOG = (Logger) LoggerFactory.getLogger(Router.class);
 
     public static final String ROUTER_CONFIG_FILENAME = "router-config.json";
 
     public String id;
     public Graph graph;
-    public double[] timeouts = {5, 2, 1, 0.5, 0.1};
+    
+	public double[] timeouts = {5, 4, 2, 1.5, 1};
+
+    /**
+     *  Separate logger for incoming requests. This should be handled with a Logback logger rather than something
+     *  simple like a PrintStream because requests come in multi-threaded.
+     */
+    public Logger requestLogger = null;
 
     /* TODO The fields for "components" are slowly disappearing... maybe at some point a router will be nothing but configuration values tied to a Graph. */
 
@@ -44,7 +59,7 @@ public class Router {
     /** A graphical window that is used for visualizing search progress (debugging). */
     public GraphVisualizer graphVisualizer = null;
 
-    /** Storage for non-descructive alternatives analysis scenarios. */
+    /** Storage for non-destructive alternatives analysis scenarios. */
     public ScenarioStore scenarioStore = new ScenarioStore();
 
     public Router(String id, Graph graph) {
@@ -111,6 +126,34 @@ public class Router {
         }
         LOG.info("Timeouts for router '{}': {}", this.id, this.timeouts);
 
+        JsonNode requestLogFile = config.get("requestLogFile");
+        if (requestLogFile != null) {
+            this.requestLogger = createLogger(requestLogFile.asText());
+            LOG.info("Logging incoming requests at '{}'", requestLogFile.asText());
+        } else {
+            LOG.info("Incoming requests will not be logged.");
+        }
+
+        JsonNode boardTimes = config.get("boardTimes");
+        if (boardTimes != null && boardTimes.isObject()) {
+            graph.boardTimes = new EnumMap<>(TraverseMode.class);
+            for (TraverseMode mode : TraverseMode.values()) {
+                if (boardTimes.has(mode.name())) {
+                    graph.boardTimes.put(mode, boardTimes.get(mode.name()).asInt(0));
+                }
+            }
+        }
+
+        JsonNode alightTimes = config.get("alightTimes");
+        if (alightTimes != null && alightTimes.isObject()) {
+            graph.alightTimes = new EnumMap<>(TraverseMode.class);
+            for (TraverseMode mode : TraverseMode.values()) {
+                if (alightTimes.has(mode.name())) {
+                    graph.alightTimes.put(mode, alightTimes.get(mode.name()).asInt(0));
+                }
+            }
+        }
+
         /* Create Graph updater modules from JSON config. */
         GraphUpdaterConfigurator.setupGraph(this.graph, config);
         
@@ -121,6 +164,28 @@ public class Router {
     /** Shut down this router when evicted or (auto-)reloaded. Stop any real-time updater threads. */
     public void shutdown() {
         GraphUpdaterConfigurator.shutdownGraph(this.graph);
+    }
+
+    /**
+     * Programmatically (i.e. not in XML) create a Logback logger for requests happening on this router.
+     * http://stackoverflow.com/a/17215011/778449
+     */
+    private static Logger createLogger(String file) {
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        PatternLayoutEncoder ple = new PatternLayoutEncoder();
+        ple.setPattern("%d{yyyy-MM-dd'T'HH:mm:ss.SSS} %msg%n");
+        ple.setContext(lc);
+        ple.start();
+        FileAppender<ILoggingEvent> fileAppender = new FileAppender<>();
+        fileAppender.setFile(file);
+        fileAppender.setEncoder(ple);
+        fileAppender.setContext(lc);
+        fileAppender.start();
+        Logger logger = (Logger) LoggerFactory.getLogger("REQ_LOG");
+        logger.addAppender(fileAppender);
+        logger.setLevel(Level.INFO);
+        logger.setAdditive(false);
+        return logger;
     }
 
 }

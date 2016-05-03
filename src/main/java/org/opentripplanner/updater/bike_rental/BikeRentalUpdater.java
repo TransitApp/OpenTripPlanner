@@ -108,6 +108,10 @@ public class BikeRentalUpdater extends PollingGraphUpdater {
                 source = new CitiBikeNycBikeRentalDataSource(networkName);
             } else if (sourceType.equals("next-bike")) {
                 source = new NextBikeRentalDataSource(networkName);
+            } else if (sourceType.equals("kml")) {
+                source = new GenericKmlBikeRentalDataSource();
+            } else if (sourceType.equals("sf-bay-area")) {
+                source = new SanFranciscoBayAreaBikeRentalDataSource(networkName);
             }
         }
 

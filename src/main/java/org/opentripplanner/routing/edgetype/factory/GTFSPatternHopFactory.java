@@ -57,6 +57,8 @@ import org.opentripplanner.graph_builder.annotation.NonStationParentStation;
 import org.opentripplanner.graph_builder.annotation.RepeatedStops;
 import org.opentripplanner.graph_builder.annotation.TripDegenerate;
 import org.opentripplanner.graph_builder.annotation.TripUndefinedService;
+import org.opentripplanner.graph_builder.annotation.*;
+import org.opentripplanner.graph_builder.module.GtfsFeedId;
 import org.opentripplanner.gtfs.GtfsContext;
 import org.opentripplanner.gtfs.GtfsLibrary;
 import org.opentripplanner.model.StopPattern;
@@ -286,6 +288,8 @@ public class GTFSPatternHopFactory {
 
     private static GeometryFactory _geometryFactory = GeometryUtils.getGeometryFactory();
 
+    private GtfsFeedId _feedId;
+
     private GtfsRelationalDao _dao;
 
     private CalendarService _calendarService;
@@ -306,12 +310,16 @@ public class GTFSPatternHopFactory {
 
     private double maxStopToShapeSnapDistance = 150;
 
+    public int maxInterlineDistance = 200;
+
     public GTFSPatternHopFactory(GtfsContext context) {
+        this._feedId = context.getFeedId();
         this._dao = context.getDao();
         this._calendarService = context.getCalendarService();
     }
     
     public GTFSPatternHopFactory() {
+        this._feedId = null;
         this._dao = null;
         this._calendarService = null;
     }
@@ -556,7 +564,7 @@ public class GTFSPatternHopFactory {
                     Stop toStop   = currPattern.getStop(0);
                     double teleportationDistance = SphericalDistanceLibrary.fastDistance(
                                         fromStop.getLat(), fromStop.getLon(), toStop.getLat(), toStop.getLon());
-                    if (teleportationDistance > 200) {
+                    if (teleportationDistance > maxInterlineDistance) {
                         // FIXME Trimet data contains a lot of these -- in their data, two trips sharing a block ID just
                         // means that they are served by the same vehicle, not that interlining is automatically allowed.
                         // see #1654
@@ -906,7 +914,7 @@ public class GTFSPatternHopFactory {
     
     private void loadAgencies(Graph graph) {
         for (Agency agency : _dao.getAllAgencies()) {
-            graph.addAgency(agency);
+            graph.addAgency(_feedId.getId(), agency);
         }
     }
 
@@ -1310,7 +1318,17 @@ public class GTFSPatternHopFactory {
             if (prev != null) {
                 if (prev.getStop().equals(st.getStop())) {
                     // OBA gives us unmodifiable lists, but we have copied them.
-                    st.setDepartureTime(st.getDepartureTime());
+
+                    // Merge the two stop times, making sure we're not throwing out a stop time with times in favor of an
+                    // interpolated stop time
+                    // keep the arrival time of the previous stop, unless it didn't have an arrival time, in which case
+                    // replace it with the arrival time of this stop time
+                    // This is particularly important at the last stop in a route (see issue #2220)
+                    if (prev.getArrivalTime() == StopTime.MISSING_VALUE) prev.setArrivalTime(st.getArrivalTime());
+
+                    // prefer to replace with the departure time of this stop time, unless this stop time has no departure time
+                    if (st.getDepartureTime() != StopTime.MISSING_VALUE) prev.setDepartureTime(st.getDepartureTime());
+
                     it.remove();
                     stopSequencesRemoved.add(st.getStopSequence());
                 }
