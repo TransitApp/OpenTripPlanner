@@ -254,7 +254,7 @@ public class GraphBuilder implements Runnable {
             List<GtfsBundle> gtfsBundles = Lists.newArrayList();
             for (File gtfsFile : gtfsFiles) {
                 GtfsBundle gtfsBundle = new GtfsBundle(gtfsFile);
-                gtfsBundle.setTransfersTxtDefinesStationPaths(true);
+                gtfsBundle.setTransfersTxtDefinesStationPaths(builderParams.useTransfersTxt);
                 if (builderParams.parentStopLinking) {
                     gtfsBundle.linkStopsToParentStations = true;
                 }
