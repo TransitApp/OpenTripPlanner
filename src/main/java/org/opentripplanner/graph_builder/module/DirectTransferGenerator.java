@@ -25,6 +25,7 @@ import org.opentripplanner.routing.vertextype.TransitStop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +46,13 @@ public class DirectTransferGenerator implements GraphBuilderModule {
     private static Logger LOG = LoggerFactory.getLogger(DirectTransferGenerator.class);
 
     int maxDuration = 60 * 10;
+    boolean useStreets;
+    int distance;
+    
+    public DirectTransferGenerator(boolean useWalk, int distanceArg) {
+        useStreets = useWalk;
+        distance = distanceArg;
+    }
 
     public List<String> provides() {
         return Arrays.asList("linking");
@@ -62,7 +70,7 @@ public class DirectTransferGenerator implements GraphBuilderModule {
         }
 
         /* The linker will use streets if they are available, or straight-line distance otherwise. */
-        NearbyStopFinder nearbyStopFinder = new NearbyStopFinder(graph, maxDuration);
+        NearbyStopFinder nearbyStopFinder = useStreets ? new NearbyStopFinder(graph, maxDuration) : new NearbyStopFinder(graph, distance, false);
         if (nearbyStopFinder.useStreets) {
             LOG.info("Creating direct transfer edges between stops using the street network from OSM...");
         } else {

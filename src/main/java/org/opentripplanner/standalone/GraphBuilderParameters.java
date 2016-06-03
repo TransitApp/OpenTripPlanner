@@ -116,6 +116,11 @@ public class GraphBuilderParameters {
      * Maximal distance between stops in meters that will connect consecutive trips that are made with same vehicle
      */
     public int maxInterlineDistance = 200;
+    
+    public boolean autoGeneratorUsingWalk = true;
+    public boolean autoGeneratorUsingDistance = true;
+    public int autoGeneratorDistance = 30;
+
 
     /**
      * Set all parameters from the given Jackson JSON tree, applying defaults.
@@ -128,6 +133,9 @@ public class GraphBuilderParameters {
         htmlAnnotations = config.path("htmlAnnotations").asBoolean(false);
         transit = config.path("transit").asBoolean(true);
         useTransfersTxt = config.path("useTransfersTxt").asBoolean(false);
+        autoGeneratorUsingWalk = config.path("autoGeneratorUsingWalk").asBoolean(true);
+        autoGeneratorUsingDistance = config.path("autoGeneratorUsingDistance").asBoolean(true);
+        autoGeneratorDistance = config.path("autoGeneratorDistance").asInt(30);
         parentStopLinking = config.path("parentStopLinking").asBoolean(false);
         stationTransfers = config.path("stationTransfers").asBoolean(false);
         subwayAccessTime = config.path("subwayAccessTime").asDouble(DEFAULT_SUBWAY_ACCESS_TIME);
