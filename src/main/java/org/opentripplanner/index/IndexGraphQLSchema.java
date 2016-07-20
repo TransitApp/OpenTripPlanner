@@ -69,7 +69,7 @@ public class IndexGraphQLSchema {
         .name("RealtimeState")
         .value("SCHEDULED", RealTimeState.SCHEDULED, "The trip information comes from the GTFS feed, i.e. no real-time update has been applied.")
 
-        .value("UPDATED", RealTimeState.UDPATED, "The trip information has been updated, but the trip pattern stayed the same as the trip pattern of the scheduled trip.")
+        .value("UPDATED", RealTimeState.UPDATED, "The trip information has been updated, but the trip pattern stayed the same as the trip pattern of the scheduled trip.")
 
         .value("CANCELED", RealTimeState.CANCELED, "The trip has been canceled by a real-time update.")
 
@@ -679,10 +679,14 @@ public class IndexGraphQLSchema {
                 .type(Scalars.GraphQLString)
                 .build())
             .field(GraphQLFieldDefinition.newFieldDefinition()
-                .name("type")
+                .name("mode")
                 .type(Scalars.GraphQLString)
                 .dataFetcher(environment -> GtfsLibrary.getTraverseMode(
                     (Route) environment.getSource()))
+                .build())
+            .field(GraphQLFieldDefinition.newFieldDefinition()
+                .name("type")
+                .type(Scalars.GraphQLString)
                 .build())
             .field(GraphQLFieldDefinition.newFieldDefinition()
                 .name("desc")
