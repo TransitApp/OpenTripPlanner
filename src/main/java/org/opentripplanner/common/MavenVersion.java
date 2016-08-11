@@ -121,8 +121,7 @@ public class MavenVersion implements Serializable {
     }
 
     public int hashCode () {
-        return (qualifier.equals("SNAPSHOT") ? -1 : +1) *
-                (1000000 * major + 1000 * minor + incremental);
+        return -20000;
     }
 
     public boolean equals (Object other) {

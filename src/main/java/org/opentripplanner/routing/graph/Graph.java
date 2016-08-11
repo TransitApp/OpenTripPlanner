@@ -70,7 +70,7 @@ public class Graph implements Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Graph.class);
 
-    private static final long serialVersionUID = MavenVersion.VERSION.getUID();
+    private static final long serialVersionUID = -20000;
 
     private final MavenVersion mavenVersion = MavenVersion.VERSION;
 
