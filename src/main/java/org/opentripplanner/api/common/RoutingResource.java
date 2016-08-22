@@ -23,6 +23,7 @@ import javax.xml.datatype.DatatypeConstants;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import org.geotools.xml.xsi.XSISimpleTypes.DateTime;
 import org.onebusaway.gtfs.model.AgencyAndId;
 import org.opentripplanner.api.parameter.QualifiedModeSet;
 import org.opentripplanner.api.transitapp.Network;
@@ -33,6 +34,8 @@ import org.opentripplanner.standalone.OTPServer;
 import org.opentripplanner.standalone.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.ning.http.util.DateUtil;
 
 import org.opentripplanner.util.ResourceBundleSingleton;
 /**
@@ -82,6 +85,9 @@ public abstract class RoutingResource {
     /** The time that the trip should depart (or arrive, for requests where arriveBy is true). */
     @QueryParam("time")
     protected String time;
+    
+    @QueryParam("timeEpoch")
+    protected String timeEpoch;
     
     /** Whether the trip should depart or arrive at the specified date and time. */
     @QueryParam("arriveBy")
@@ -392,7 +398,10 @@ public abstract class RoutingResource {
             //FIXME: move into setter method on routing request
             TimeZone tz;
             tz = router.graph.getTimeZone();
-            if (date == null && time != null) { // Time was provided but not date
+            if (timeEpoch != null) {
+            	request.setDateTime(new Date(Long.parseLong(timeEpoch) * 1000));
+            }
+            else if (date == null && time != null) { // Time was provided but not date
                 LOG.debug("parsing ISO datetime {}", time);
                 try {
                     // If the time query param doesn't specify a timezone, use the graph's default. See issue #1373.
